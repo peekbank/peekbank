@@ -26,7 +26,7 @@ read_sr_sample_report = function(path) {
 	return(rdf)
 }
 	
-read_sr_sample_report(path = '/Users/stephanmeylan/Downloads/example_sr_research_output.txt')
+read_sr_sample_report(path = 'sample_data/sr_research/example_sr_research_output.txt')
 
 #[ ] what is `event`
 #[ ] Trial-level vars: target and distractor
