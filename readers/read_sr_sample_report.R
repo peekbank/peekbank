@@ -19,8 +19,8 @@ read_sr_sample_report = function(path) {
 	y_colname = paste(which_eye,'_GAZE_Y', sep='')
 	label = paste(which_eye,'_INTEREST_AREA_LABEL', sep='')
 	
-	rdf = data.frame(sample_df[,c('TIMESTAMP', x_colname, y_colname)])
-	names(rdf) = c('timestamp','x','y')
+	rdf = data.frame(sample_df[,c('TIMESTAMP', x_colname, y_colname, label)])
+	names(rdf) = c('timestamp','x','y', 'roi')
 	rdf$subject_id = subject_id
 	rdf$trial_id = trial_id
 	return(rdf)
@@ -29,7 +29,7 @@ read_sr_sample_report = function(path) {
 read_sr_sample_report(path = '/Users/stephanmeylan/Downloads/example_sr_research_output.txt')
 
 #[ ] what is `event`
-
+#[ ] Trial-level vars: target and distractor
 
 
 
