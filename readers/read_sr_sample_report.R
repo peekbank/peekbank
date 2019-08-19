@@ -20,6 +20,7 @@ read_sr_sample_report = function(path) {
 	label = paste(which_eye,'_INTEREST_AREA_LABEL', sep='')
 	
 	rdf = data.frame(sample_df[,c('TIMESTAMP', x_colname, y_colname)])
+	names(rdf) = c('timestamp','x','y')
 	rdf$subject_id = subject_id
 	rdf$trial_id = trial_id
 	return(rdf)
