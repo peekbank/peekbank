@@ -91,7 +91,6 @@ data <- data %>%
   mutate(
     t = round((data$raw_t - data$raw_t[1])/1000, 3)
     )
-s
 # Redefine coordinate origin (0,0)
 # SMI starts from top left
 # Here we convert the origin of the x,y coordinate to be bottom left (by "reversing" y-coordinate origin)
