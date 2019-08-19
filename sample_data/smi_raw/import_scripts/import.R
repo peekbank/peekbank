@@ -4,6 +4,12 @@ library(tidyverse)
 library(janitor)
 library(reader)
 
+#general parameters
+max_lines_subj_search <- 34
+subid_name <- "Subject"
+x.max <- 1920
+y.max <- 1080
+
 #Specify file
 file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
 
@@ -12,9 +18,13 @@ project_root <- here::here()
 #build file path
 file_path <- fs::path(project_root,"sample_data","smi_raw",file_name)
 
-
-#specify delimiter
+#guess delimiter
 sep <- get.delim(file_path, comment="#")
+
+#read in lines to extract subject
+sub_id <- read_lines(file_path, n_max=max_lines_subj_search) %>%
+  str_subset(subid_name) %>% 
+  str_extract(paste("(?<=",subid_name,":\\t).*",sep=""))
 
 #read in data
 data <-  
@@ -38,6 +48,11 @@ data <-  data %>%
     ry = "r_por_y_px",
     trial_id = "trial"
 )
+
+## add sub_id column
+
+data <- data %>%
+  mutate(sub_id=sub_id)
 
   
 #Remove out of range looks
@@ -72,22 +87,20 @@ data <-
        -rx, -ry, -lx, -ly
      )
 ## Convert time into ms starting from 0
-
 data <- data %>% 
   mutate(
-    t = round((data$raw_t - data$raw_t[1])/1000000, 3)
+    t = round((data$raw_t - data$raw_t[1])/1000, 3)
     )
-
-data$diff_t <- c(0,diff(data$raw_t))
-
+s
 # Redefine coordinate origin (0,0)
 # SMI starts from top left
 # Here we convert the origin of the x,y coordinate to be bottom left (by "reversing" y-coordinate origin)
-x.max = 1920
-y.max=1080
-
 data <- data %>%
   mutate(
     y = y.max - y
   )
+
+#extract final columns
+data <- data %>%
+  select(sub_id,x,y,t,trial_id)
 
