@@ -1,3 +1,4 @@
+
 #old code for smi preprocessing
 
 #This function reads in data that end in .txt and selects the relevant columns
@@ -21,9 +22,7 @@ read.smi.idf <- function(file.name) {
     ) %>% 
     mutate(sid = str_extract(file.name, "\\d{6}_\\d{2}"))
 }
-```
 
-```{r include=FALSE}
 ################################################################################
 ## PREPROCESS DATA 
 ## take data file with l and r, x and y, as well as stimulus, average
