@@ -1,0 +1,17 @@
+id,dataset,type,Stimulus,target_image,distracter_image,target_side,target_label,distracter_label,full_phrase,point_of_disambig
+1,refword,Familiar,o_book_dog.jpg,dog,book,right,dog,book,NA,1857
+2,refword,Novel,o_fep_toma.jpg,toma,fep,right,toma,fep,NA,1873
+3,refword,Familiar,t_clock_frog.jpg,clock,frog,left,clock,frog,NA,1882
+4,refword,Novel,o_toma_fep.jpg,fep,toma,right,fep,toma,NA,1816
+5,refword,Familiar,o_dog_car.jpg,car,dog,right,car,dog,NA,1904
+6,refword,Novel,t_toma_fep.jpg,toma,fep,left,toma,fep,NA,1786
+7,refword,Familiar,t_frog_carrot.jpg,frog,carrot,left,frog,carrot,NA,1816
+8,refword,Novel,t_fep_toma.jpg,fep,toma,left,fep,toma,NA,1908
+9,refword,Familiar,o_lamp_carrot.jpg,carrot,lamp,right,carrot,lamp,NA,1781
+10,refword,Novel,t_fep_toma.jpg,fep,toma,left,fep,toma,NA,1908
+11,refword,Familiar,o_clock_lamp.jpg,lamp,clock,right,lamp,clock,NA,1893
+12,refword,Novel,t_toma_fep.jpg,toma,fep,left,toma,fep,NA,1786
+13,refword,Familiar,t_banana_car.jpg,banana,car,left,banana,car,NA,1901
+14,refword,Novel,o_toma_fep.jpg,fep,toma,right,fep,toma,NA,1816
+15,refword,Familiar,t_book_banana.jpg,book,banana,left,book,banana,NA,1868
+16,refword,Novel,o_fep_toma.jpg,toma,fep,right,toma,fep,NA,1873
