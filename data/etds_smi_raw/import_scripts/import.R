@@ -8,8 +8,6 @@ max_lines_subj_search <- 40 #maybe change this value?
 subid_name <- "Subject"
 monitor_size <- "Calibration Area"
 sample_rate <- "Sample Rate"
-x.max <- 1680
-y.max <- 1050
 left_x_col_name = "L POR X [px]"
 right_x_col_name = "R POR X [px]"
 left_y_col_name = "L POR Y [px]"
@@ -42,6 +40,12 @@ sample_rate <- read_lines(file_path, n_max=max_lines_subj_search) %>%
   str_subset(sample_rate) %>% 
   str_extract(paste("(?<=",sample_rate,":\\t).*",sep="")) %>%
   trimws()
+
+#get maximum x-y coordinates on screen
+screen_xy <- str_split(monitor_size,"x") %>%
+  unlist()
+xmax <- as.numeric(as.character(screen_xy[1]))
+ymax <- as.numeric(as.character(screen_xy[2]))
 
 #read in data
 data <-  
