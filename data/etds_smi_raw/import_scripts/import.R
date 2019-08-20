@@ -46,8 +46,8 @@ sample_rate <- read_lines(file_path, n_max=max_lines_subj_search) %>%
 #get maximum x-y coordinates on screen
 screen_xy <- str_split(monitor_size,"x") %>%
   unlist()
-xmax <- as.numeric(as.character(screen_xy[1]))
-ymax <- as.numeric(as.character(screen_xy[2]))
+x.max <- as.numeric(as.character(screen_xy[1]))
+y.max <- as.numeric(as.character(screen_xy[2]))
 
 #read in data
 data <-  

@@ -1,0 +1,330 @@
+[
+  {
+    "model_class": "AOI_Data_Record",
+    "table": "aoi_data",
+    "fields": [
+      {
+        "field_name": "aoi",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "subject_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Subject_Record",
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "t",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "trial_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Trial_Record",
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "AOI_Region_Record",
+    "table": "aoi_regions",
+    "fields": [
+      {
+        "field_name": "l_x_max",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "l_x_min",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "l_y_max",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "l_y_min",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "r_x_max",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "r_x_min",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "r_y_max",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "r_y_min",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "Dataset_Record",
+    "table": "datasets",
+    "fields": [
+      {
+        "field_name": "monitor_size_x",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "monitor_size_y",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "sample_rate",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "tracker",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "Subject_Record",
+    "table": "subjects",
+    "fields": [
+      {
+        "field_name": "age",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "sex",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "Trial_Record",
+    "table": "trials",
+    "fields": [
+      {
+        "field_name": "aoi_region_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "AOI_Region_Record",
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "dataset_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Dataset_Record",
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "distractor_image",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "distractor_label",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "full_phase",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "point_of_disambiguation",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "target_image",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "target_label",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "target_side",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "XY_Data_Record",
+    "table": "xy_data",
+    "fields": [
+      {
+        "field_name": "subject_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Subject_Record",
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "trial_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Trial_Record",
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "x",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "y",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      }
+    ]
+  }
+]
