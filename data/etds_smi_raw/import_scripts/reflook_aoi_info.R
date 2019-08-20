@@ -12,7 +12,7 @@ library(stringr); library(pryr)
 library(rstanarm);
 
 # load tidyverse last, so no functions get masked
-library(tidyverse); 
+library(tidyverse) 
 
 project_root <- here::here()
 
@@ -39,7 +39,7 @@ file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
 file_path <- fs::path(project_root,"data","etds_smi_raw","raw_data",file_name)
 
 #guess delimiter
-sep <- get.delim(file_path, comment="#", delims=c("\t",","),skip = max_lines_subj_search)
+sep <- reader::get.delim(file_path, comment="#", delims=c("\t",","),skip = max_lines_subj_search)
 
 #get monitor size
 monitor_size <- read_lines(file_path, n_max=max_lines_subj_search) %>%
@@ -55,7 +55,7 @@ y_max <- as.numeric(monitor_size[2]) ##for unknown reasons we currently need to 
 
 
 
-xml_list <- xmlParse(sample_file_path) %>% xmlToList(simplify = TRUE)
+xml_obj <- xmlParse(sample_file_path) %>% xmlToList()
 
 #name the two sublists Target and Distractor appropriately
 if(xml_obj[[1]]$Group == 'Target') {
