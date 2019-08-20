@@ -41,14 +41,18 @@ data <-
 
 #select rows and column names for xy file
 data <-  data %>%
-  filter(Type=="SMP") %>%
+  filter(Type=="SMP", #remove anything that isn't actually collecting ET data
+         Stimulus != "-", #remove calibration
+         !grepl('.avi', Stimulus),  #remove anything that isn't actually a trial; .avis are training or attention getters
+         grepl('_', Stimulus)) %>% #from here, keep only trials, which have format o_name1_name2_.jpg;
   select(
     raw_t = "Time",
     lx = left_x_col_name,
     rx = right_x_col_name,
     ly = left_y_col_name,
     ry = right_y_col_name,
-    trial_id = "Trial"
+    trial_id = "Trial",
+    Stimulus = Stimulus
 )
 
 ## add sub_id column (extracted from data file)
@@ -64,6 +68,7 @@ data <-
     ry = if_else(ry <= 0 | ry >= y.max, NA_real_, ry),
     ly = if_else(ly <= 0 | ly >= y.max, NA_real_, ly)
   )
+
 
 ## Average left-right x-y coordinates
 #Take one eye's measurements if we only have one; otherwise average them
@@ -100,6 +105,13 @@ data <- data %>%
   mutate(
     y = y.max - y
   )
+
+# Redefine trials based on stimuli rather than SMI output
+#check if previous stimulus value is equal to current value; ifelse, trial test increases by 1
+#what I need to do: have the initial value be one; store this value; if the previous value is different, update the value; if not, don't update the value
+tmp <- data %>%
+  mutate(trial.test = 1, 
+         trial.test = ifelse(Stimulus != lag(Stimulus), trial.test+1, trial.test))
 
 #extract final columns
 data <- data %>%
