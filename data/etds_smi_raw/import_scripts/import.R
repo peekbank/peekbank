@@ -15,7 +15,6 @@ right_y_col_name = "R POR Y [px]"
 
 #Specify file 
 file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
-#file_name <- "SAN-071218-01-eye_data Samples.txt"
 
 #Define root path
 project_root <- here::here()
@@ -109,13 +108,15 @@ data <- data %>%
 # Redefine trials based on stimuli rather than SMI output
 #check if previous stimulus value is equal to current value; ifelse, trial test increases by 1
 #what I need to do: have the initial value be one; store this value; if the previous value is different, update the value; if not, don't update the value
-tmp <- data %>%
-  mutate(trial.test = 1, 
-         trial.test = ifelse(Stimulus != lag(Stimulus), trial.test+1, trial.test))
-
+data <- data %>%
+  mutate(stim_lag = lag(Stimulus), 
+         temp = ifelse(Stimulus != stim_lag, 1, 0), 
+         temp_id = cumsum(c(0, temp[!is.na(temp)])), 
+         trial_id = 1+temp_id)
+         
 #extract final columns
 data <- data %>%
-  select(sub_id,x,y,t,trial_id)
+  select(sub_id,x,y,t,trial_id, Stimulus)
 
 #Write data
 write_csv(data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","xy_data.csv"))
