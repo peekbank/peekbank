@@ -15,7 +15,6 @@ right_y_col_name = "R POR Y [px]"
 
 #Specify file 
 file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
-#file_name <- "SAN-071218-01-eye_data Samples.txt"
 
 #Define root path
 project_root <- here::here()
