@@ -107,7 +107,6 @@ data <- data %>%
 
 # Redefine trials based on stimuli rather than SMI output
 #check if previous stimulus value is equal to current value; ifelse, trial test increases by 1
-#what I need to do: have the initial value be one; store this value; if the previous value is different, update the value; if not, don't update the value
 data <- data %>%
   mutate(stim_lag = lag(Stimulus), 
          temp = ifelse(Stimulus != stim_lag, 1, 0), 
