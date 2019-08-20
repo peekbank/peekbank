@@ -1,0 +1,9 @@
+"","id","target_image","distractor_image","target_side","distractor_side","target_label","distractor_label","full_phrase","point_of_disambiguation"
+"1","trial_1","dog","boat","L","R","dog","boat","Look at the dog  ",3
+"2","trial_2","ball","apple","R","L","ball","apple","Look at the ball  ",3
+"3","trial_3","cat","carrot","L","R","cat","carrot","Look at the cat  ",3
+"4","trial_4","block","cow","R","L","block","cow","Look at the block  ",3
+"5","trial_5","flower","duck","L","R","flower","duck","Look at the flower  ",3
+"6","trial_6","bunny","fork","R","L","bunny","fork","Look at the bunny  ",3
+"7","trial_7","spoon","tree","L","R","spoon","tree","Look at the spoon  ",3
+"8","trial_8","cup","bell","R","L","cup","bell","Look at the cup  ",3
