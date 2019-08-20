@@ -7,19 +7,24 @@ library(reader)
 #general parameters
 max_lines_subj_search <- 34
 subid_name <- "Subject"
-x.max <- 1920
-y.max <- 1080
+x.max <- 1680
+y.max <- 1050
+left_x_col_name = "l_por_x_px"
+right_x_col_name = "r_por_x_px"
+left_y_col_name = "l_por_y_px"
+right_y_col_name = "r_por_y_px"
 
 #Specify file
 file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
+#file_name <- "SAN-071218-01-eye_data Samples.txt"
 
 #Define root path
 project_root <- here::here()
 #build file path
-file_path <- fs::path(project_root,"sample_data","smi_raw",file_name)
+file_path <- fs::path(project_root,"sample_data","smi_raw","raw_data",file_name)
 
 #guess delimiter
-sep <- get.delim(file_path, comment="#")
+sep <- get.delim(file_path, comment="#", skip = max_lines_subj_search)
 
 #read in lines to extract subject
 sub_id <- read_lines(file_path, n_max=max_lines_subj_search) %>%
@@ -42,15 +47,14 @@ data <- data %>%
 data <-  data %>%
   select(
     raw_t = "time",
-    lx = "l_por_x_px",
-    rx = "r_por_x_px",
-    ly = "l_por_y_px",
-    ry = "r_por_y_px",
+    lx = left_x_col_name,
+    rx = right_x_col_name,
+    ly = left_y_col_name,
+    ry = right_y_col_name,
     trial_id = "trial"
 )
 
 ## add sub_id column
-
 data <- data %>%
   mutate(sub_id=sub_id)
 
@@ -102,4 +106,8 @@ data <- data %>%
 #extract final columns
 data <- data %>%
   select(sub_id,x,y,t,trial_id)
+
+#Write data
+write_csv(data,path=fs::path(project_root,"sample_data","smi_raw","processed_data","xy_data.csv"))
+
 
