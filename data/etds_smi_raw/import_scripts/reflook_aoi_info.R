@@ -19,15 +19,29 @@ project_root <- here::here()
 sample_file_path <- 
   fs::path(
     project_root,
-    "sample_data",
-    "smi_raw",
+    "data",
+    "etds_smi_raw",
+    "raw_data",
     "test_aois",
     "o_clock_lamp (AOIs).xml"
   )
 
-xml_list <- xmlParse(sample_file_path) %>% xmlToList(simplify = TRUE)
+xml_obj <- xmlParse(sample_file_path) %>% xmlToList()
 
-get_coordinates <- function(xml_list) {
+#name the two sublists Target and Distractor appropriately
+if(xml_obj[[1]]$Group == 'Target') {
+  names(xml_obj) <- c('Target', 'Distractor')
+} else {
+  names(xml_obj) <- c('Distractor', 'Target')
+}
+x_coords <- xml_obj$Target$Points
+
+aoi_x_min = xml_obj$Target[['Points']][[1]]$X
+aoi_y_min = y_max - as.numeric(xml_obj$Target[['Points']][[2]]$Y)
+aoi_x_max = xml_obj$Target[['Points']][[2]]$X
+aoi_y_max = y_max - as.numeric(xml_obj$Target[['Points']][[1]]$Y)
+
+get_coordinates <- function(xml_obj) {
   
 }
 
