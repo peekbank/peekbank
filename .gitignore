@@ -1,2 +1,6 @@
 .DS_Store
 .Rproj.user
+.Rhistory
+._*
+*.pyc
+config.json

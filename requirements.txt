@@ -1,0 +1,7 @@
+Django==1.11.15
+django-extensions==2.2.1
+mysqlclient==1.4.4
+pathlib==1.0.1
+pytz==2019.2
+six==1.12.0
+sqlparse==0.3.0

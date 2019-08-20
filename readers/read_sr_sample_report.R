@@ -1,4 +1,4 @@
-onevalue_or_fail = function(vector, name){
+assert_one_value = function(vector, name){
 	unique_vals = unique(vector)	
 	if (length(unique_vals)	> 1){
 		stop(paste('Multiple values for variable: ', name))
@@ -10,11 +10,11 @@ onevalue_or_fail = function(vector, name){
 read_sr_sample_report = function(path) {
 	# returns: subject_id | x | y | t | aoi	
 	sample_df = read.table(path, sep ='\t', header=T)
-	subject_id = onevalue_or_fail(sample_df$Session_Name_, 'Session_Name_')
-	trial_id = onevalue_or_fail(sample_df$TRIAL_INDEX, 'TRIAL_INDEX')
+	subject_id = assert_one_value(sample_df$Session_Name_, 'Session_Name_')
+	trial_id = assert_one_value(sample_df$TRIAL_INDEX, 'TRIAL_INDEX')
 	
 	#use EYE_TRACKED to determine which eye is being tracked
-	which_eye = toupper(onevalue_or_fail(sample_df$EYE_TRACKED, 'EYE_TRACKED'))	
+	which_eye = toupper(assert_one_value(sample_df$EYE_TRACKED, 'EYE_TRACKED'))	
 	x_colname = paste(which_eye,'_GAZE_X', sep='')
 	y_colname = paste(which_eye,'_GAZE_Y', sep='')
 	label = paste(which_eye,'_INTEREST_AREA_LABEL', sep='')
@@ -30,12 +30,3 @@ read_sr_sample_report(path = 'sample_data/sr_research/example_sr_research_output
 
 #[ ] what is `event`
 #[ ] Trial-level vars: target and distractor
-
-
-
-
-
-
-
-
-
