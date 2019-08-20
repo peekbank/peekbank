@@ -94,7 +94,7 @@ data <-
 ## Convert time into ms starting from 0
 data <- data %>% 
   mutate(
-    t = round((data$raw_t - data$raw_t[1])/1000, 3)
+    timestamp = round((data$raw_t - data$raw_t[1])/1000, 3)
     )
 
 # Redefine coordinate origin (0,0)
@@ -112,6 +112,12 @@ data <- data %>%
          temp = ifelse(Stimulus != stim_lag, 1, 0), 
          temp_id = cumsum(c(0, temp[!is.na(temp)])), 
          trial_id = 1+temp_id)
+
+#set time to zero at the beginning of each trial
+data <- data %>%
+  group_by(trial_id) %>%
+  mutate(t = timestamp - min(timestamp))
+
          
 #extract final columns
 data <- data %>%
