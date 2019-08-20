@@ -12,6 +12,8 @@ left_x_col_name = "L POR X [px]"
 right_x_col_name = "R POR X [px]"
 left_y_col_name = "L POR Y [px]"
 right_y_col_name = "R POR Y [px]"
+stims_to_remove_chars=c(".avi")
+stims_to_keep_chars=c("_")
 
 #Specify file 
 file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
@@ -59,8 +61,8 @@ data <-
 data <-  data %>%
   filter(Type=="SMP", #remove anything that isn't actually collecting ET data
          Stimulus != "-", #remove calibration
-         !grepl('.avi', Stimulus),  #remove anything that isn't actually a trial; .avis are training or attention getters
-         grepl('_', Stimulus)) %>% #from here, keep only trials, which have format o_name1_name2_.jpg;
+         !grepl(paste(stims_to_remove_chars,collapse="|"), Stimulus),  #remove anything that isn't actually a trial; .avis are training or attention getters
+         grepl(paste(stims_to_keep_chars,collapse="|"), Stimulus)) %>% #from here, keep only trials, which have format o_name1_name2_.jpg;
   select(
     raw_t = "Time",
     lx = left_x_col_name,
