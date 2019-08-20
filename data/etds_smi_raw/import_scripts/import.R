@@ -107,5 +107,3 @@ data <- data %>%
 
 #Write data
 write_csv(data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","xy_data.csv"))
-
-
