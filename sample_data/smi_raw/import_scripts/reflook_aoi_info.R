@@ -22,12 +22,14 @@ sample_file_path <-
     "sample_data",
     "smi_raw",
     "test_aois",
-    "o_book_dog (AOIs).xml"
+    "o_clock_lamp (AOIs).xml"
   )
 
 xml_list <- xmlParse(sample_file_path) %>% xmlToList(simplify = TRUE)
 
-get_coordinates <- function(xml_list)
+get_coordinates <- function(xml_list) {
+  
+}
 
 
 
