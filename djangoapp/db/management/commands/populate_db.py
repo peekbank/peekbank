@@ -8,12 +8,11 @@ class Command(BaseCommand):
     # Show this when the user types help
     help = "Populate Peekbank MySQL Database"
 
-    # FIXME
     def add_arguments(self, parser):
         parser.add_argument('--data_root', help='Root directory to add to database')
 
     # A command must define handle()
     def handle(self, *args, **options):
-        print('Called populate_db'        
+        print('Called populate_db with data_root '+options.get('data_root'))        
         
-        process_peekbank_dirs(data_root)
+        process_peekbank_dirs(options.get('data_root'))
