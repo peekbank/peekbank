@@ -32,7 +32,7 @@ class Subject_Record(Model):
         db_table = 'subjects'
 
 class Trial_Record(Model):    
-    dataset_id = ForeignKey(Dataset_Record, blank=True, null=True, default=None)
+    dataset = ForeignKey(Dataset_Record, blank=True, null=True, default=None)
     target_side = CharField(max_length=255, blank=True, default=None, null=True) 
     target_label = CharField(max_length=255, blank=True, default=None, null=True) 
     distractor_label = CharField(max_length=255, blank=True, default=None, null=True) 
