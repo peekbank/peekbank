@@ -1,14 +1,14 @@
-library(janitor); library(tidyverse)
+library(here); library(janitor); library(tidyverse)
 
 remove_repeat_headers <- function(d, idx_var) {
   d[d[,idx_var] != idx_var,]
 }
 sampling_rate <- 33
-read_path <- "data/icoder/raw_data"
-write_path <- "data/icoder/processed_data"
+read_path <- "data/etds_icoder/raw_data"
+write_path <- "data/etds_icoder/processed_data"
 
 # read raw icoder files (is it one file per participant or aggregated?)
-d_raw <- readr::read_delim(file.path(read_path, "pomper_saffran_2016_raw_datawiz.txt"), 
+d_raw <- readr::read_delim(here(read_path, "pomper_saffran_2016_raw_datawiz.txt"), 
                            delim = "\t")
 
 # remove any column with all NAs (these are columns 
@@ -46,7 +46,7 @@ d_tidy <- d_processed %>% tidyr::gather(t, aoi, first_t_idx:last_t_idx) # but ga
 # recode 0, 1, ., - as distracter, target, other, NA [check in about this]
 # this leaves NA as NA 
 d_tidy <- d_tidy %>% 
-  mutate(aoi_new = case_when(
+  mutate(aoi = case_when(
     aoi == "0" ~ "distractor",
     aoi == "1" ~ "target",
     aoi == "0.5" ~ "center",
@@ -62,7 +62,7 @@ d_tidy <- d_tidy %>%
 
 # create dataset variables
 d_tidy <- d_tidy %>% 
-  mutate(dataset = "icoder",
+  mutate(dataset = "pomper_saffran_2016",
          tracker = "video_camera", 
          monitor = NA,
          monitor_sr = NA,
@@ -71,18 +71,20 @@ d_tidy <- d_tidy %>%
 # rename variables to match schema 
 #  TODO: think more about what crit_on_set
 d_tidy_final <- d_tidy %>% 
-  rename(trial_id = tr_num,
+  rename(sub_id = sub_num,
+         trial_id = tr_num,
          age = months,
          point_of_disambiguation = crit_on_set)
 
 #  write AOI table
 d_tidy_final %>% 
-  select(sub_num, t, aoi, trial_id) %>% 
+  select(sub_id, t, aoi, trial_id) %>% 
   write_csv(file.path(write_path, "aoi_data.csv"))
 
 # write Participants table
 d_tidy_final %>% 
-  select(sub_num, age, sex) %>% 
+  select(sub_id, age, sex) %>% 
+  distinct() %>% 
   write_csv(file.path(write_path, "participants.csv"))
 
 # write Trials table
@@ -90,11 +92,13 @@ d_tidy_final %>%
 d_tidy_final %>% 
   select(trial_id, dataset, order, condition, target_image, 
          distractor_image, target_side) %>% 
+  distinct() %>% 
   write_csv(file.path(write_path, "trials.csv"))
 
 # write Dataset table
 d_tidy_final %>% 
   select(dataset, tracker, monitor_sr, sampling_rate) %>% 
+  distinct() %>% 
   write_csv(file.path(write_path, "dataset.csv"))
 
 # don't need to write aoi_coordinates.csv because they don't exist
