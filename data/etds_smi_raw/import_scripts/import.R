@@ -6,6 +6,8 @@ library(reader)
 #general parameters
 max_lines_subj_search <- 40 #maybe change this value?
 subid_name <- "Subject"
+monitor_size <- "Calibration Area"
+sample_rate <- "Sample Rate"
 x.max <- 1680
 y.max <- 1050
 left_x_col_name = "L POR X [px]"
@@ -28,6 +30,17 @@ sep <- get.delim(file_path, comment="#", delims=c("\t",","),skip = max_lines_sub
 sub_id <- read_lines(file_path, n_max=max_lines_subj_search) %>%
   str_subset(subid_name) %>% 
   str_extract(paste("(?<=",subid_name,":\\t).*",sep="")) %>%
+  trimws()
+
+monitor_size <- read_lines(file_path, n_max=max_lines_subj_search) %>%
+  str_subset(monitor_size) %>% 
+  str_extract(paste("(?<=",monitor_size,":\\t).*",sep="")) %>%
+  trimws() %>%
+  str_replace("\t", "x")
+
+sample_rate <- read_lines(file_path, n_max=max_lines_subj_search) %>%
+  str_subset(sample_rate) %>% 
+  str_extract(paste("(?<=",sample_rate,":\\t).*",sep="")) %>%
   trimws()
 
 #read in data
@@ -123,5 +136,12 @@ data <- data %>%
 data <- data %>%
   select(sub_id,x,y,t,trial_id, Stimulus)
 
-#Write data
+#Write data for x y coordinates
 write_csv(data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","xy_data.csv"))
+
+##Make dataset table
+dataset.data <- data.frame(id = "refword", 
+                           tracker = "SMI", 
+                           monitor_size = monitor_size, 
+                           sample_rate = sample_rate)
+write_csv(dataset.data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","dataset_data.csv"))
