@@ -16,18 +16,6 @@ library(tidyverse);
 
 project_root <- here::here()
 
-#sample file 
-sample_file_path <- 
-  fs::path(
-    project_root,
-    "data",
-    "etds_smi_raw", 
-    "raw_data", 
-    "test_aois",
-    "o_clock_lamp (AOIs).xml"
-  )
-
-
 ##also read in enough of the eye data to get the maximum x and y
 max_lines_subj_search <- 40 #maybe change this value?
 monitor_size <- "Calibration Area"
@@ -50,12 +38,45 @@ monitor_size <- read_lines(file_path, n_max=max_lines_subj_search) %>%
   unlist()
 
 #get maximum y of monitor size
-y_max <- as.numeric(monitor_size[2]) ##for unknown reasons we currently need to subtract ymin and ymax in kem code. may not be necessary.
+y_max <- as.numeric(monitor_size[2]) ##NB this is based on one participant's data, but it's totally possible that participants were run on different monitors
 
 
 
+xml_obj <- xmlParse(sample_file_path) %>% xmlToList(simplify = FALSE)
 
-xml_list <- xmlParse(sample_file_path) %>% xmlToList(simplify = TRUE)
+
+###Big to-do: The calculations for ymin/ymax depend on knowing the size of the monitor;
+#this is hardcoded in here, but needs to be adjusted for each participant, given that they might be run on diff. monitors
+#start by getting a list of the files in the current directory
+#sample file for 
+# sample_file_path <- 
+#   fs::path(
+#     project_root,
+#     "data",
+#     "etds_smi_raw", 
+#     "raw_data", 
+#     "test_aois"
+#     # "o_clock_lamp (AOIs).xml"
+#   )
+
+#
+
+get_coords_t_d <- function(xml_obj) {
+  ##first get the files in the appropriate directory
+  file.names <- list.files(path = fs::path(project_root, "data", "etds_smi_raw", "raw_data", "test_aois"), 
+                      pattern="*.xml", full.names=FALSE, recursive=TRUE)
+  
+  for(file in file.names) {
+    #look at xml
+  }
+  #what this function needs to do: 
+  #take each xml file in a directory
+  #read in the xml file
+  #sort into target and distractor
+  #get the x/y min/max
+  #get the aoi_id
+  #output to a df
+}
 
 #name the two sublists Target and Distractor appropriately
 if(xml_obj[[1]]$Group == 'Target') {
@@ -73,25 +94,6 @@ aoi_y_max = y_max - as.numeric(xml_obj$Target[['Points']][[1]]$Y)
 get_coordinates <- function(xml_obj) {
   
 }
-
-
-###from kyle, trying to get the XML to work
-make_stimulus_key <- function(xml_obj, order_name, order_age) {
-  is_stimulus_file <- (str_detect(names(xml_obj), pattern = "StimulusFile") %>% sum()) > 0
-  
-  if(is_stimulus_file) {
-    d <- tibble(
-      stimulus_name = xml_obj[["Name"]],
-      stimulus = xml_obj[["StimulusFile"]],
-      stimulus_type = xml_obj[["Type"]]
-    )
-  } else {
-    d <- tibble(
-      stimulus_name = xml_obj[["Name"]],
-      stimulus = NA,
-      stimulus_type = xml_obj[["Type"]]
-    )
-  }
 
 
 
