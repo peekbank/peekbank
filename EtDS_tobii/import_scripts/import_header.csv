@@ -1,0 +1,6 @@
+xy_data_save,xy_data_tobii,aoi_data_save,aoi_data_tobii,participants_save,participants_tobii
+sub_id,ParticipantName,sub_id,ParticipantName,sub_id,ParticipantName
+x,GazePointX..ADCSpx.,t,EyeTrackerTimestamp,age,age
+y,GazePointY..ADCSpx.,aoi,IRMarkerID,sex,sex
+t,EyeTrackerTimestamp,trial_id,StudioTestName,,
+tria_id,StudioTestName,,,,
