@@ -9,10 +9,11 @@ class Command(BaseCommand):
     help = "Populate Peekbank MySQL Database"
 
     def add_arguments(self, parser):
+        parser.add_argument('--schema_file', help='File with schema JSON')
         parser.add_argument('--data_root', help='Root directory to add to database')
 
     # A command must define handle()
     def handle(self, *args, **options):
-        print('Called populate_db with data_root '+options.get('data_root'))        
-        
-        process_peekbank_dirs(options.get('data_root'))
+        print('Called populate_db with data_root '+options.get('data_root')+' and schema_file '+options.get('schema_file'))
+
+        process_peekbank_dirs(options.get('data_root'), options.get('schema_file'))

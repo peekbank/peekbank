@@ -1,29 +1,31 @@
 import glob
 import os
 #import logging
-from django import db
+# from django import db
 from django.db.models import Avg, Count, Sum
-from db.models import AOI_Coordinate_Record, Dataset_Record, Subject_Record, Trial_Record, AOI_Data_Record, XY_Data_Record, Admin
+# from db.models import AOI_Coordinate_Record, Dataset_Record, Subject_Record, Trial_Record, AOI_Data_Record, XY_Data_Record, Admin
+from generate_models import create_schema_models
 import pandas as pd
+
 
 def checkForPath(path):
     if os.path.exists(path):
         print(path+ ' found!')
         return(path)
-    else:        
+    else:
         return(None)
 
 def create_data_tables(processed_data_folders):
 
-    for data_folder in processed_data_folders: #this for loop needs to be inside the function to allow `continue` when a file is missing 
+    for data_folder in processed_data_folders: #this for loop needs to be inside the function to allow `continue` when a file is missing
 
-        print('Buidling AOI coordinates table') # no dependencies
+        print('Building AOI coordinates table') # no dependencies
         aoi_coordinates_csv_path = checkForPath(os.path.join(data_folder, 'aoi_coordinates.csv'))
         if aoi_coordinates_csv_path is None:
             print(os.path.join(data_folder, 'aoi_coordinates.csv')+ ' is missing; allowing for now')
             pass # FIXME: this should fail (continue to next) once the spec has been achieved on the reader; allowing for now
             #continue
-        else:            
+        else:
             aoi_coordinates_df = pd.read_csv(aoi_coordinates_csv_path)
             for aoi_coordinate_record in aoi_coordinates_df.to_dict('records'):
                 aoi_coordinates = AOI_Coordinate_Record.objects.create(
@@ -38,10 +40,10 @@ def create_data_tables(processed_data_folders):
         if dataset_csv_path is None:
             print(os.path.join(data_folder, 'dataset.csv')+ ' is missing, aborting....')
             continue
-        else:            
-            dataset_dict = pd.read_csv(dataset_csv_path).to_dict('records')[0]            
+        else:
+            dataset_dict = pd.read_csv(dataset_csv_path).to_dict('records')[0]
 
-            dataset = Dataset_Record.objects.create(           
+            dataset = db.models.Dataset_Record.objects.create(
             dataset_id  = (dataset_dict['dataset_id'] if 'dataset_id' in dataset_dict else None),
             tracker = (dataset_dict['tracker'] if 'target_label' in dataset_dict else None),
             monitor_size_x = (dataset_dict['monitor_size_x'] if 'target_label' in dataset_dict else None),
@@ -53,10 +55,10 @@ def create_data_tables(processed_data_folders):
         if subjects_csv_path is None:
             print(os.path.join(data_folder, 'subjects.csv')+ ' is missing, aborting....')
             continue
-        else:            
+        else:
             subjects_df = pd.read_csv(subjects_csv_path)
             for subject_record in subjects_df.to_dict('records'):
-                subject = Subject_Record.objects.create(           
+                subject = Subject_Record.objects.create(
                     subject_id = (subject_record['subject_id'] if 'subject_id' in subject_record else None),
                     age = (subject_record['age'] if 'age' in subject_record else None),
                     sex = (subject_record['sex'] if 'sex' in subject_record else None)),
@@ -70,8 +72,8 @@ def create_data_tables(processed_data_folders):
 
             trial_df = pd.read_csv(trials_csv_path)
 
-            for trial_record in trial_df.to_dict('records'):      
-                trial = Trial_Record.objects.create(                
+            for trial_record in trial_df.to_dict('records'):
+                trial = Trial_Record.objects.create(
                     trial_id = (trial_record['trial_id'] if 'trial_id' in trial_record else None),
                     dataset_id =  (trial_record['dataset_id'] if 'dataset_id' in trial_record else None),
                     target_side =  (trial_record['target_side'] if 'target_side' in trial_record else None),
@@ -92,9 +94,9 @@ def create_data_tables(processed_data_folders):
 
             aoi_data_df = pd.read_csv(aoi_data_csv_path)
 
-            for aoi_data_record in aoi_data_df.to_dict('records'):      
-                aoi_data = AOI_Data_Record.objects.create( 
-                    aoi_data_id = (aoi_data_record['aoi_data_id'] if 'aoi_data_id' in aoi_data_record else None),               
+            for aoi_data_record in aoi_data_df.to_dict('records'):
+                aoi_data = AOI_Data_Record.objects.create(
+                    aoi_data_id = (aoi_data_record['aoi_data_id'] if 'aoi_data_id' in aoi_data_record else None),
                     subject_id = (aoi_data_record['subject_id'] if 'subject_id' in aoi_data_record else None),
                     t = (aoi_data_record['t'] if 't' in aoi_data_record else None),
                     aoi = aoi_coordinates,
@@ -109,7 +111,7 @@ def create_data_tables(processed_data_folders):
 
             xy_data_df = pd.read_csv(xy_data_path)
 
-            for xy_data_record in xy_data_df.to_dict('records'):      
+            for xy_data_record in xy_data_df.to_dict('records'):
                 xy_data = XY_Data_Record.objects.create(
                     xy_data_id = (xy_data_record['xy_data_id'] if 'xy_data_id' in xy_data_record else None),
                     x = (xy_data_record['x'] if 'x' in xy_data_record else None),
@@ -119,21 +121,23 @@ def create_data_tables(processed_data_folders):
 
         # FIXME: when does the admin table get updated? What is the verisoning system
 
-def process_peekbank_dirs(data_root):
+def process_peekbank_dirs(data_root, schema_file):
+
+    create_schema_models(schema_file)
 
     # FIXME: Parallelize if possible as long as we can coordinate the indices
     #multiprocessing.log_to_stderr()
     #pool = multiprocessing.Pool()
     #logger = multiprocessing.get_logger()
     #logger.setLevel(logging.INFO)
-    
+
     results = []
 
     all_dirs = [x[0] for x in os.walk(data_root)]
     processed_data_folders = [x for x in all_dirs if os.path.basename(x) == 'processed_data']
 
     # FIXME: return `results` which can be evaluated for errors
-    create_data_tables(processed_data_folders)        
+    create_data_tables(processed_data_folders)
 
     # catch any exceptions thrown by child processes
     for result in results:

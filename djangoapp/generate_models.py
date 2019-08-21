@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
+import django
 from django.db.models import Model, CharField, ForeignKey, IntegerField, DateField, TextField, FloatField, BooleanField
-from django.core.management import BaseCommand
 from datetime import datetime
 import json
 
@@ -17,29 +17,34 @@ field_classes = {
 
 def create_model(model_class, table, fields):
 
+    print('Creating model for class ' + model_class)
     class Meta:
         app_label = 'db'
         db_table = table
 
-    attrs = {'__module__': 'db.models', 'Meta': Meta}
+    attrs = {'__module__': 'django.db.models', 'Meta': Meta}
     for field in fields:
         field_name = field["field_name"]
         field_class = field_classes[field["field_class"]]
         field_class_init = field_class(**field["options"])
         attrs[field_name] = field_class_init
-    print(attrs)
+    # print(attrs)
+
     model = type(model_class, (Model,), attrs)
-    print(model)
-    return model
+    # print(model)
+
+    return(model)
 
 
-class Command(BaseCommand):
+def create_schema_models(schema_file) :
 
-    schema = json.load(open('static/peekbank-schema.json'))
+    schema = json.load(open(schema_file))
 
     for model_data in schema:
         model_class = model_data["model_class"]
         db_table = model_data["table"]
         fields = model_data["fields"]
         model = create_model(model_class, db_table, fields)
+        # print(model)
         globals()[model_class] = model
+    # print(django.db.models.Dataset_Record)
