@@ -71,8 +71,8 @@ d_tidy <- d_tidy %>%
 # rename variables to match schema
 #  TODO: think more about what crit_on_set
 d_tidy_final <- d_tidy %>%
+  mutate(trial_id = as.numeric(factor(paste0(as.character(tr_num),order)))-1) %>%
   rename(sub_id = sub_num,
-         trial_id = tr_num,
          age = months,
          point_of_disambiguation = crit_on_set)
 
