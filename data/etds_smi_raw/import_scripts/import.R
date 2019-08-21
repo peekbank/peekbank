@@ -208,9 +208,7 @@ process_smi <- function(dir, file_ext = '.txt') {
   
   #create xy data
   xy.data <- lapply(all_file_paths,process_smi_eyetracking_file) %>%
-    bind_rows()
-  
-  xy.data <- xy.data %>%
+    bind_rows() %>%
     mutate(xy_data_id = seq(0,length(lab_subject_id)-1)) %>%
     dplyr::select(xy_data_id,lab_subject_id,x,y,t,trial_id)
     
