@@ -20,6 +20,7 @@ right_y_col_name <-  "R POR Y [px]"
 stims_to_remove_chars <- c(".avi")
 stims_to_keep_chars <- c("_")
 trial_file_name <- "reflook_tests.csv"
+participant_file_name <- "reflook_v1_demographics.csv"
 
 
 #Specify file 
@@ -30,7 +31,7 @@ file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
 project_root <- here::here()
 #build directory path
 dir_path <- fs::path(project_root,"data","etds_smi_raw","raw_data","full_dataset")
-trial_dir_path <- fs::path(project_root,"data","etds_smi_raw","raw_data")
+exp_info_path <- fs::path(project_root,"data","etds_smi_raw","raw_data","experiment_info")
 
 #output path
 output_path <- fs::path(project_root,"data","etds_smi_raw","processed_data")
@@ -49,6 +50,28 @@ extract_smi_info <- function(file_path,parameter_name) {
     str_replace("\t", "x")
   
   return(info_object)
+}
+
+create_zero_index<- function(data, id_column_name="lab_subject_id") {
+  data <- data %>%
+  mutate(stim_lag = lag(Stimulus), 
+         temp = ifelse(Stimulus != stim_lag, 1, 0), 
+         temp_id = cumsum(c(0, temp[!is.na(temp)])), 
+         trial_id = temp_id)
+}
+
+
+#### Table 2: Participant Info/ Demographics ####
+
+process_subjects_info <- function(file_path) {
+  data <- read.csv(file_path)%>%
+    dplyr::select(subid, age, gender)%>%
+    dplyr::rename("lab_subject_id" = "subid", 
+                  "sex" = "gender")%>%
+    mutate(sex = factor(sex, labels = c("Male", "Female", NA)), #this is pulled from yurovsky processing code
+           age = ifelse(age == "NaN", NA, age)) 
+  
+  return(data)
 }
 
 
@@ -252,7 +275,10 @@ process_smi_eyetracking_file <- function(file_path, delim_options = possible_del
   
 }
 
-process_smi <- function(dir,trial_dir, file_ext = '.txt') {
+process_smi <- function(dir,exp_info_dir, file_ext = '.txt') {
+  
+  
+  #### generate all file paths ####
   
   #list files in directory
   all_files <- list.files(path = dir, 
@@ -262,29 +288,46 @@ process_smi <- function(dir,trial_dir, file_ext = '.txt') {
   #create file paths
   all_file_paths <- paste0(dir,"/",all_files,sep="")
   
+  #create participant file path
+  participant_file_path <- paste0(exp_info_dir, "/",participant_file_name)
+  
   #create trial info file path
-  trial_file_path <- paste0(trial_dir, "/",trial_file_name)
+  trial_file_path <- paste0(exp_info_dir, "/",trial_file_name)
+  
+  #### generate all data objects ####
+  
+  #create xy data
+  xy.data <- lapply(all_file_paths,process_smi_eyetracking_file) %>%
+    bind_rows() %>%
+    mutate(xy_data_id = seq(0,length(lab_subject_id)-1)) %>%
+    mutate(subject_id = as.numeric(factor(lab_subject_id, levels=unique(lab_subject_id)))-1) %>%
+    dplyr::select(xy_data_id,subject_id,lab_subject_id,x,y,t,trial_id)
+  
+  #extract unique participant ids from eyetracking data (in order to filter participant demographic file)
+  participant_id_table <- xy.data %>%
+    distinct(lab_subject_id, subject_id)
+
+  #create participant data
+  subjects.data <- process_subjects_info(participant_file_path) %>%
+    left_join(participant_id_table,by="lab_subject_id") %>%
+    filter(!is.na(subject_id))
   
   #create trials data
   trials.data <- process_smi_trial_info(trial_file_path)
   
   #create dataset data
   dataset.data <- process_smi_dataset(all_file_paths[1])
-  
-  #create xy data
-  xy.data <- lapply(all_file_paths,process_smi_eyetracking_file) %>%
-    bind_rows() %>%
-    mutate(xy_data_id = seq(0,length(lab_subject_id)-1)) %>%
-    dplyr::select(xy_data_id,lab_subject_id,x,y,t,trial_id)
     
   
   #write all data
   #write_feather(dataset.data,path=paste0(output_path,"/","dataset_data.feather"))
   #write_feather(xy.data,path=paste0(output_path,"/","xy_data.feather"))
   
+  write_csv(subjects.data,path=paste0(output_path,"/","subjects.csv"))
+  write_csv(trials.data,path=paste0(output_path,"/","trials.csv"))
   write_csv(dataset.data,path=paste0(output_path,"/","dataset.csv"))
   write_csv(xy.data,path=paste0(output_path,"/","xy_data.csv"))
-  write_csv(trials.data,path=paste0(output_path,"/","trials.csv"))
+  
   
   
 }
@@ -293,4 +336,8 @@ process_smi <- function(dir,trial_dir, file_ext = '.txt') {
 
 #### Run SMI ####
 
-process_smi(dir=dir_path,trial_dir=trial_dir_path)
+process_smi(dir=dir_path,exp_info_dir=exp_info_path)
+
+
+
+
