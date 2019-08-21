@@ -19,7 +19,7 @@
         "options": {
           "to": "Subject_Record",
           "blank": true,
-          "null": true,
+          "null": false,
           "default": "None"
         }
       },
@@ -38,7 +38,7 @@
         "options": {
           "to": "Trial_Record",
           "blank": true,
-          "null": true,
+          "null": false,
           "default": "None"
         }
       }
@@ -199,7 +199,7 @@
         "options": {
           "to": "AOI_Region_Record",
           "blank": true,
-          "null": true,
+          "null": false,
           "default": "None"
         }
       },
@@ -209,7 +209,7 @@
         "options": {
           "to": "Dataset_Record",
           "blank": true,
-          "null": true,
+          "null": false,
           "default": "None"
         }
       },
@@ -293,7 +293,7 @@
         "options": {
           "to": "Subject_Record",
           "blank": true,
-          "null": true,
+          "null": false,
           "default": "None"
         }
       },
@@ -303,7 +303,7 @@
         "options": {
           "to": "Trial_Record",
           "blank": true,
-          "null": true,
+          "null": false,
           "default": "None"
         }
       },
@@ -323,6 +323,32 @@
           "blank": true,
           "null": true,
           "default": "None"
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "Admin",
+    "table": "admin",
+    "fields": [
+      {
+        "field_name": "date",
+        "field_class": "DateField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "datetime.now",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "version",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None",
+          "max_length": 255
         }
       }
     ]
