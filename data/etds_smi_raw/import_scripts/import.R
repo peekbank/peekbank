@@ -30,6 +30,11 @@ dir_path <- fs::path(project_root,"data","etds_smi_raw","raw_data","full_dataset
 #output path
 output_path <- fs::path(project_root,"data","etds_smi_raw","processed_data")
 
+
+#### generic functions ###
+
+
+#function for extracting information from SMI header/ comments
 extract_smi_info <- function(file_path,parameter_name) {
 
   info_object <- read_lines(file_path, n_max=max_lines_search) %>%
@@ -41,6 +46,16 @@ extract_smi_info <- function(file_path,parameter_name) {
   return(info_object)
 }
 
+
+#### Table 3: Trial Info ####
+
+process_smi_trial_info <- function() {
+  
+}
+
+
+#### Table 4: Dataset ####
+
 process_smi_dataset <- function(file_path,lab_datasetid="refword_v1") {
   
   #read in lines to extract smi info
@@ -48,14 +63,18 @@ process_smi_dataset <- function(file_path,lab_datasetid="refword_v1") {
   sample_rate <- extract_smi_info(file_path,sample_rate)
   
   ##Make dataset table
-  dataset.data <- data.frame(lab_datasetid = lab_datasetid, 
-                             tracker = "SMI", 
-                             monitor_size = monitor_size, 
-                             sample_rate = sample_rate)
+  dataset.data <- data.frame(
+    dataset_id = 0,
+    lab_datasetid = lab_datasetid, 
+    tracker = "SMI", 
+    monitor_size = monitor_size,
+    sample_rate = sample_rate
+    )
   
   return(dataset.data)
 }
 
+#### Table 1A: XY Data ####
 
 process_smi_eyetracking_file <- function(file_path, delim_options = possible_delims,stimulus_coding="stim_column") {
   
@@ -63,7 +82,7 @@ process_smi_eyetracking_file <- function(file_path, delim_options = possible_del
   sep <- get.delim(file_path, comment="#", delims=delim_options,skip = max_lines_search)
   
   #read in lines to extract smi info
-  subject_id <- extract_smi_info(file_path,subid_name)
+  lab_subject_id <- extract_smi_info(file_path,subid_name)
   monitor_size <- extract_smi_info(file_path,monitor_size)
   sample_rate <- extract_smi_info(file_path,sample_rate)
   
@@ -97,9 +116,9 @@ process_smi_eyetracking_file <- function(file_path, delim_options = possible_del
       Stimulus = Stimulus
     )
   
-  ## add subject_id column (extracted from data file)
+  ## add lab_subject_id column (extracted from data file)
   data <- data %>%
-    mutate(subject_id=subject_id)
+    mutate(lab_subject_id=lab_subject_id)
   
   #Remove out of range looks
   data <- 
@@ -156,17 +175,18 @@ process_smi_eyetracking_file <- function(file_path, delim_options = possible_del
       mutate(stim_lag = lag(Stimulus), 
              temp = ifelse(Stimulus != stim_lag, 1, 0), 
              temp_id = cumsum(c(0, temp[!is.na(temp)])), 
-             trial_id = 1+temp_id)
+             trial_id = temp_id)
     
     #set time to zero at the beginning of each trial
     data <- data %>%
       group_by(trial_id) %>%
-      mutate(t = timestamp - min(timestamp))
+      mutate(t = timestamp - min(timestamp)) %>%
+      ungroup()
   }
   
   #extract final columns
   xy.data <- data %>%
-    dplyr::select(subject_id,x,y,t,trial_id)
+    dplyr::select(lab_subject_id,x,y,t,trial_id)
 
   
   return(xy.data)
@@ -190,6 +210,11 @@ process_smi <- function(dir, file_ext = '.txt') {
   xy.data <- lapply(all_file_paths,process_smi_eyetracking_file) %>%
     bind_rows()
   
+  xy.data <- xy.data %>%
+    mutate(xy_data_id = seq(0,length(lab_subject_id)-1)) %>%
+    dplyr::select(xy_data_id,lab_subject_id,x,y,t,trial_id)
+    
+  
   #write all data
   #write_feather(dataset.data,path=paste0(output_path,"/","dataset_data.feather"))
   #write_feather(xy.data,path=paste0(output_path,"/","xy_data.feather"))
@@ -199,6 +224,8 @@ process_smi <- function(dir, file_ext = '.txt') {
   
   
 }
+
+
 
 #### Run SMI ####
 
