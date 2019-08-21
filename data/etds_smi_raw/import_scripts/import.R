@@ -6,6 +6,8 @@ library(fs)
 library(feather)
 
 #### general parameters ####
+dataset_name <- "refword_v1"
+dataset_id <- 0
 max_lines_search <- 40 #maybe change this value?
 subid_name <- "Subject"
 monitor_size <- "Calibration Area"
@@ -17,6 +19,8 @@ left_y_col_name <-  "L POR Y [px]"
 right_y_col_name <-  "R POR Y [px]"
 stims_to_remove_chars <- c(".avi")
 stims_to_keep_chars <- c("_")
+trial_file_name <- "reflook_tests.csv"
+
 
 #Specify file 
 file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
@@ -26,6 +30,7 @@ file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
 project_root <- here::here()
 #build directory path
 dir_path <- fs::path(project_root,"data","etds_smi_raw","raw_data","full_dataset")
+trial_dir_path <- fs::path(project_root,"data","etds_smi_raw","raw_data")
 
 #output path
 output_path <- fs::path(project_root,"data","etds_smi_raw","processed_data")
@@ -49,14 +54,68 @@ extract_smi_info <- function(file_path,parameter_name) {
 
 #### Table 3: Trial Info ####
 
-process_smi_trial_info <- function() {
+process_smi_trial_info <- function(file_path) {
+  
+  #guess delimiter
+  sep <- get.delim(file_path, delims=possible_delims)
+  
+  #read in data
+  trial_data <-  
+    read_delim(
+      file_path,
+      delim=sep
+    )
+  
+  #separate stimulus name for individual images (target and distracter)
+  trial_data <- trial_data %>%
+    mutate(stimulus_name = str_remove(Stimulus,".jpg")) %>%
+    separate(stimulus_name, into=c("target_info","left_image","right_image"),sep="_",remove=F)
+  
+  #convert onset to ms
+  trial_data <- trial_data %>%
+    mutate(point_of_disambig=onset *1000)
+  
+  #add target/ distracter info
+  trial_data <- trial_data %>%
+    mutate(
+      target_image = case_when(
+        target_info == "o" ~ right_image,
+        target_info == "t" ~ left_image
+      ),
+      distracter_image = case_when(
+        target_info == "o" ~ left_image,
+        target_info == "t" ~ right_image
+      )
+    ) %>%
+    rename(target_side = target) %>%
+    mutate(
+      target_label = target_image,
+      distracter_label = distracter_image
+    )
+  
+  # rename and create some additional filler columns
+  trial_data <- trial_data %>%
+    mutate(trial_id=trial-1) %>%
+    mutate(
+      dataset=dataset_id #choose specific dataset id for now
+      )
+  
+  #full phrase? currently unknown for refword
+  trial_data$full_phrase = NA
+  
+  #extract relevant columns
+  #keeping type and Stimulus for now for cross-checking with raw eyetracking
+  trial_data <- trial_data %>%
+    select(trial_id,dataset,target_image,distracter_image,target_side,target_label,distracter_label,full_phrase,point_of_disambig)
+  
+  return(trial_data)
   
 }
 
 
 #### Table 4: Dataset ####
 
-process_smi_dataset <- function(file_path,lab_datasetid="refword_v1") {
+process_smi_dataset <- function(file_path,lab_datasetid=dataset_name) {
   
   #read in lines to extract smi info
   monitor_size <- extract_smi_info(file_path,monitor_size)
@@ -64,7 +123,7 @@ process_smi_dataset <- function(file_path,lab_datasetid="refword_v1") {
   
   ##Make dataset table
   dataset.data <- data.frame(
-    dataset_id = 0,
+    dataset_id = dataset_id, #hard code data set id for now
     lab_datasetid = lab_datasetid, 
     tracker = "SMI", 
     monitor_size = monitor_size,
@@ -193,7 +252,7 @@ process_smi_eyetracking_file <- function(file_path, delim_options = possible_del
   
 }
 
-process_smi <- function(dir, file_ext = '.txt') {
+process_smi <- function(dir,trial_dir, file_ext = '.txt') {
   
   #list files in directory
   all_files <- list.files(path = dir, 
@@ -203,14 +262,18 @@ process_smi <- function(dir, file_ext = '.txt') {
   #create file paths
   all_file_paths <- paste0(dir,"/",all_files,sep="")
   
+  #create trial info file path
+  trial_file_path <- paste0(trial_dir, "/",trial_file_name)
+  
+  #create trials data
+  trials.data <- process_smi_trial_info(trial_file_path)
+  
   #create dataset data
   dataset.data <- process_smi_dataset(all_file_paths[1])
   
   #create xy data
   xy.data <- lapply(all_file_paths,process_smi_eyetracking_file) %>%
-    bind_rows()
-  
-  xy.data <- xy.data %>%
+    bind_rows() %>%
     mutate(xy_data_id = seq(0,length(lab_subject_id)-1)) %>%
     dplyr::select(xy_data_id,lab_subject_id,x,y,t,trial_id)
     
@@ -219,8 +282,9 @@ process_smi <- function(dir, file_ext = '.txt') {
   #write_feather(dataset.data,path=paste0(output_path,"/","dataset_data.feather"))
   #write_feather(xy.data,path=paste0(output_path,"/","xy_data.feather"))
   
-  write_csv(dataset.data,path=paste0(output_path,"/","dataset_data.csv"))
+  write_csv(dataset.data,path=paste0(output_path,"/","dataset.csv"))
   write_csv(xy.data,path=paste0(output_path,"/","xy_data.csv"))
+  write_csv(trials.data,path=paste0(output_path,"/","trials.csv"))
   
   
 }
@@ -229,4 +293,4 @@ process_smi <- function(dir, file_ext = '.txt') {
 
 #### Run SMI ####
 
-process_smi(dir=dir_path)
+process_smi(dir=dir_path,trial_dir=trial_dir_path)
