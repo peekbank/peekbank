@@ -310,7 +310,12 @@ process_smi <- function(dir,exp_info_dir, file_ext = '.txt') {
   #create participant data
   subjects.data <- process_subjects_info(participant_file_path) %>%
     left_join(participant_id_table,by="lab_subject_id") %>%
-    filter(!is.na(subject_id))
+    filter(!is.na(subject_id)) %>%
+    select(subject_id,lab_subject_id,age,sex)
+  
+  #clean up xy_data
+  xy.data <- xy.data %>%
+    select(-lab_subject_id)
   
   #create trials data
   trials.data <- process_smi_trial_info(trial_file_path)
