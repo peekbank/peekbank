@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import django
 from django.db.models import Model, CharField, ForeignKey, IntegerField, DateField, TextField, FloatField, BooleanField
+from django.conf import settings
 from datetime import datetime
 import json
 
@@ -22,19 +23,24 @@ def create_model(model_class, table, fields):
         app_label = 'db'
         db_table = table
 
-    attrs = {'__module__': 'django.db.models', 'Meta': Meta}
+    def process_option(option):
+        if option == "None":
+            return(None)
+        if option == "datetime.now":
+            return(datetime.now)
+        return(option)
+
+    attrs = {'__module__': 'models', 'Meta': Meta}
     for field in fields:
         field_name = field["field_name"]
         field_class = field_classes[field["field_class"]]
-        field_class_init = field_class(**field["options"])
+        options = {opt_name: process_option(opt_value) for opt_name, opt_value in field["options"].items()}
+        field_class_init = field_class(**options)
         attrs[field_name] = field_class_init
-    # print(attrs)
 
     model = type(model_class, (Model,), attrs)
-    # print(model)
 
     return(model)
-
 
 def create_schema_models(schema_file) :
 
@@ -45,6 +51,6 @@ def create_schema_models(schema_file) :
         db_table = model_data["table"]
         fields = model_data["fields"]
         model = create_model(model_class, db_table, fields)
-        # print(model)
         globals()[model_class] = model
-    # print(django.db.models.Dataset_Record)
+
+create_schema_models(settings.SCHEMA_FILE)

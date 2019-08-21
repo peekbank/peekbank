@@ -4,3 +4,4 @@
 ._*
 *.pyc
 config.json
+*env/

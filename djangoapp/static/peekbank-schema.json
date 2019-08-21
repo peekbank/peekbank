@@ -4,6 +4,15 @@
     "table": "aoi_data",
     "fields": [
       {
+        "field_name": "aoi_data_id",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
         "field_name": "aoi",
         "field_class": "CharField",
         "options": {
@@ -48,6 +57,15 @@
     "model_class": "AOI_Region_Record",
     "table": "aoi_regions",
     "fields": [
+      {
+        "field_name": "aoi_region_id",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
       {
         "field_name": "l_x_max",
         "field_class": "IntegerField",
@@ -127,6 +145,15 @@
     "table": "datasets",
     "fields": [
       {
+        "field_name": "dataset_id",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
         "field_name": "monitor_size_x",
         "field_class": "IntegerField",
         "options": {
@@ -169,6 +196,15 @@
     "table": "subjects",
     "fields": [
       {
+        "field_name": "subject_id",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
         "field_name": "age",
         "field_class": "IntegerField",
         "options": {
@@ -193,6 +229,15 @@
     "model_class": "Trial_Record",
     "table": "trials",
     "fields": [
+      {
+        "field_name": "trial_id",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
       {
         "field_name": "aoi_region_id",
         "field_class": "ForeignKey",
@@ -288,6 +333,15 @@
     "table": "xy_data",
     "fields": [
       {
+        "field_name": "xy_data_id",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
         "field_name": "subject_id",
         "field_class": "ForeignKey",
         "options": {
@@ -328,9 +382,18 @@
     ]
   },
   {
-    "model_class": "Admin",
+    "model_class": "Admin_Record",
     "table": "admin",
     "fields": [
+      {
+        "field_name": "admin_id",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
       {
         "field_name": "date",
         "field_class": "DateField",

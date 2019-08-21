@@ -1,10 +1,9 @@
 import glob
 import os
 #import logging
-# from django import db
+import django
 from django.db.models import Avg, Count, Sum
-# from db.models import AOI_Coordinate_Record, Dataset_Record, Subject_Record, Trial_Record, AOI_Data_Record, XY_Data_Record, Admin
-from generate_models import create_schema_models
+import generate_models
 import pandas as pd
 
 
@@ -27,8 +26,10 @@ def create_data_tables(processed_data_folders):
             #continue
         else:
             aoi_coordinates_df = pd.read_csv(aoi_coordinates_csv_path)
+            # offset = AOI_Coordinate_Record.objects.number_that_exist()
             for aoi_coordinate_record in aoi_coordinates_df.to_dict('records'):
                 aoi_coordinates = AOI_Coordinate_Record.objects.create(
+                    # aoi_coordinates_id = offset + (aoi_coordinate_record['aoi_coordinates_id'] if 'aoi_coordinates_id' in aoi_coordinate_record else None),
                     aoi_coordinates_id = (aoi_coordinate_record['aoi_coordinates_id'] if 'aoi_coordinates_id' in aoi_coordinate_record else None),
                     l_x_min = (aoi_coordinate_record['l_x_min'] if 'l_x_min' in aoi_coordinate_record else None),
                     l_x_max = (aoi_coordinate_record['l_x_max'] if 'l_x_max' in aoi_coordinate_record else None),
@@ -43,7 +44,7 @@ def create_data_tables(processed_data_folders):
         else:
             dataset_dict = pd.read_csv(dataset_csv_path).to_dict('records')[0]
 
-            dataset = db.models.Dataset_Record.objects.create(
+            dataset = generate_models.Dataset_Record.objects.create(
             dataset_id  = (dataset_dict['dataset_id'] if 'dataset_id' in dataset_dict else None),
             tracker = (dataset_dict['tracker'] if 'target_label' in dataset_dict else None),
             monitor_size_x = (dataset_dict['monitor_size_x'] if 'target_label' in dataset_dict else None),
@@ -121,9 +122,9 @@ def create_data_tables(processed_data_folders):
 
         # FIXME: when does the admin table get updated? What is the verisoning system
 
-def process_peekbank_dirs(data_root, schema_file):
+def process_peekbank_dirs(data_root):
 
-    create_schema_models(schema_file)
+    # create_schema_models(schema_file)
 
     # FIXME: Parallelize if possible as long as we can coordinate the indices
     #multiprocessing.log_to_stderr()
