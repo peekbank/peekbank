@@ -64,20 +64,77 @@ xml_obj <- xmlParse(sample_file_path) %>% xmlToList(simplify = FALSE)
 
 get_coords_t_d <- function(xml_obj) {
   ##first get the files in the appropriate directory
-  file.names <- list.files(path = fs::path(project_root, "data", "etds_smi_raw", "raw_data", "test_aois"), 
-                      pattern="*.xml", full.names=FALSE, recursive=TRUE)
+  file.names <- 
+    list.files(
+      path = fs::path(
+        project_root, 
+        "data", 
+        "etds_smi_raw", 
+        "raw_data", 
+        "test_aois"
+      ), 
+      pattern="*.xml", 
+      full.names=FALSE, 
+      recursive=TRUE
+    )
   
-  for(file in file.names) {
-    #look at xml
-  }
-  #what this function needs to do: 
-  #take each xml file in a directory
-  #read in the xml file
-  #sort into target and distractor
-  #get the x/y min/max
-  #get the aoi_id
-  #output to a df
+  file.names %>% 
+    map_df(function(file_name){
+      sample_xml_path <- 
+        fs::path(
+          project_root,
+          "data",
+          "etds_smi_raw",
+          "raw_data",
+          "test_aois",
+          file_name
+        )
+      #make the xml object that we will extract information from
+      xml_obj <- 
+        xmlParse(sample_xml_path) %>% 
+        xmlToList(simplify = FALSE)
+      #name the two sublists 'Target' and 'Distractor' as appropriate
+      if(xml_obj[[1]]$Group == 'Target') {
+        names(xml_obj) <- c('target', 'distractor')
+      } else {
+        names(xml_obj) <- c('distractor', 'target')
+      }
+      
+      names(xml_obj$target$Points) <- c('top_left_target', 'bottom_right_target')
+      names(xml_obj$distractor$Points) <- c('top_left_distractor', 'bottom_right_distractor')
+      
+      max_min_info <- 
+        tibble(
+          dimension = c("x_min", "y_min", "x_max", "y_max"),
+          target = c(
+            as.numeric(xml_obj$target$Points$top_left_target$X), #x_min for target
+            y_max - as.numeric((xml_obj$target$Points$bottom_right_target$Y)), #y_min for target
+            as.numeric(xml_obj$target$Points$bottom_right_target$X), #x_max for target
+            y_max - as.numeric((xml_obj$target$Points$top_left_target$Y)) #y_min for target
+          ),
+          distractor = c(
+            as.numeric(xml_obj$distractor$Points$top_left_distractor$X), #x_min for distractor
+            y_max - as.numeric((xml_obj$distractor$Points$bottom_right_distractor$Y)), #y_min for distractor
+            as.numeric(xml_obj$distractor$Points$bottom_right_distractor$X), #x_max for distractor
+            y_max - as.numeric((xml_obj$distractor$Points$top_left_distractor$Y)) #y_min for distractor
+          )
+        ) %>% 
+        add_column(aoi_id = file_name)
+      
+      return(max_min_info)
+      
+      
+     })
+
 }
+
+#what this function needs to do: 
+#take each xml file in a directory
+#read in the xml file
+#sort into target and distractor
+#get the x/y min/max
+#get the aoi_id
+#output to a df
 
 #name the two sublists Target and Distractor appropriately
 if(xml_obj[[1]]$Group == 'Target') {
@@ -85,7 +142,6 @@ if(xml_obj[[1]]$Group == 'Target') {
 } else {
   names(xml_obj) <- c('Distractor', 'Target')
 }
-x_coords <- xml_obj$Target$Points
 
 aoi_x_min = xml_obj$Target[['Points']][[1]]$X
 aoi_y_min = y_max - as.numeric(xml_obj$Target[['Points']][[2]]$Y)
