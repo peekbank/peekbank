@@ -3,6 +3,7 @@ library(here)
 library(tidyverse)
 library(reader)
 library(fs)
+library(feather)
 
 #### general parameters ####
 max_lines_search <- 40 #maybe change this value?
@@ -165,7 +166,7 @@ process_smi_eyetracking_file <- function(file_path, delim_options = possible_del
   
   #extract final columns
   xy.data <- data %>%
-    dplyr::select(subject_id,x,y,t,trial_id, Stimulus)
+    dplyr::select(subject_id,x,y,t,trial_id)
 
   
   return(xy.data)
@@ -190,8 +191,12 @@ process_smi <- function(dir, file_ext = '.txt') {
     bind_rows()
   
   #write all data
+  #write_feather(dataset.data,path=paste0(output_path,"/","dataset_data.feather"))
+  #write_feather(xy.data,path=paste0(output_path,"/","xy_data.feather"))
+  
   write_csv(dataset.data,path=paste0(output_path,"/","dataset_data.csv"))
   write_csv(xy.data,path=paste0(output_path,"/","xy_data.csv"))
+  
   
 }
 
