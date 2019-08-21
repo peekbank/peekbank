@@ -146,7 +146,7 @@ data <- data %>%
 write_csv(data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","xy_data.csv"))
 
 ##Make dataset table
-dataset.data <- data.frame(id = "refword", 
+dataset.data <- data.frame(id = "refword_v1", 
                            tracker = "SMI", 
                            monitor_size = monitor_size, 
                            sample_rate = sample_rate)
