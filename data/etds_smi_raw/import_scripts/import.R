@@ -1,7 +1,7 @@
 ## Load packages
 library(here)
-library(tidyverse)
 library(reader)
+library(tidyverse)
 
 #general parameters
 max_lines_subj_search <- 40 #maybe change this value?
@@ -63,7 +63,7 @@ data <-  data %>%
          Stimulus != "-", #remove calibration
          !grepl(paste(stims_to_remove_chars,collapse="|"), Stimulus),  #remove anything that isn't actually a trial; .avis are training or attention getters
          grepl(paste(stims_to_keep_chars,collapse="|"), Stimulus)) %>% #from here, keep only trials, which have format o_name1_name2_.jpg;
-  select(
+  dplyr::select(
     raw_t = "Time",
     lx = left_x_col_name,
     rx = right_x_col_name,
@@ -106,7 +106,7 @@ data <-
         is.na(ry) & is.na(ly) ~ NA_real_
       )
     ) %>%
-     select(
+     dplyr::select(
        -rx, -ry, -lx, -ly
      )
 
@@ -140,7 +140,7 @@ data <- data %>%
          
 #extract final columns
 data <- data %>%
-  select(sub_id,x,y,t,trial_id, Stimulus)
+  dplyr::select(sub_id,x,y,t,trial_id, Stimulus)
 
 #Write data for x y coordinates
 write_csv(data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","xy_data.csv"))
