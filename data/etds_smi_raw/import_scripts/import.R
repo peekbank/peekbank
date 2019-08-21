@@ -24,7 +24,7 @@ file_name <- "Reflook4_2 (2)_052212_2_2133 Samples.txt"
 #Define root path
 project_root <- here::here()
 #build directory path
-dir_path <- fs::path(project_root,"data","etds_smi_raw","raw_data")
+dir_path <- fs::path(project_root,"data","etds_smi_raw","raw_data","full_dataset")
 
 #output path
 output_path <- fs::path(project_root,"data","etds_smi_raw","processed_data")
@@ -195,21 +195,6 @@ process_smi <- function(dir, file_ext = '.txt') {
   
 }
 
+#### Run SMI ####
+
 process_smi(dir=dir_path)
-
-
-
-
-
-
-         
-
-#Write data for x y coordinates
-#write_csv(data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","xy_data.csv"))
-
-##Make dataset table
-# dataset.data <- data.frame(id = "refword", 
-#                            tracker = "SMI", 
-#                            monitor_size = monitor_size, 
-#                            sample_rate = sample_rate)
-# write_csv(dataset.data,path=fs::path(project_root,"data","etds_smi_raw","processed_data","dataset_data.csv"))
