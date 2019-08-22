@@ -309,7 +309,7 @@
         }
       },
       {
-        "field_name": "full_phase",
+        "field_name": "full_phrase",
         "field_class": "IntegerField",
         "options": {
           "blank": true,
