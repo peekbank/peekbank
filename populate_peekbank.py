@@ -3,7 +3,6 @@ import os
 #import logging
 import django
 from django.db.models import Avg, Count, Sum
-import generate_models
 import pandas as pd
 
 
