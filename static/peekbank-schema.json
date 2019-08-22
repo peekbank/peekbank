@@ -188,6 +188,16 @@
           "null": true,
           "default": "None"
         }
+      },
+      {
+        "field_name": "lab_dataset_id",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
       }
     ]
   },
@@ -215,6 +225,16 @@
       },
       {
         "field_name": "sex",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "lab_subject_id",
         "field_class": "CharField",
         "options": {
           "blank": true,
