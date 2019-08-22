@@ -279,6 +279,16 @@
         }
       },
       {
+        "field_name": "lab_trial_id",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
         "field_name": "distractor_image",
         "field_class": "CharField",
         "options": {
