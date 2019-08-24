@@ -61,7 +61,7 @@ def create_data_tables(processed_data_folders):
                 dataset_id_with_offset = dataset_record['dataset_id'] + dataset_offset
                 datasets[dataset_id_with_offset] = db.models.Dataset_Record(
                     dataset_id  = dataset_id_with_offset,
-                    lab_dataset_id  = (dataset_record['dataset_id'] if 'dataset_id' in dataset_record else None),
+                    lab_dataset_id  = (dataset_record['lab_dataset_id'] if 'lab_dataset_id' in dataset_record else None),
                     tracker = (dataset_record['tracker'] if 'target_label' in dataset_record else None),
                     monitor_size_x = (dataset_record['monitor_size_x'] if 'target_label' in dataset_record else None),
                     monitor_size_y = (dataset_record['monitor_size_y'] if 'target_label' in dataset_record else None),
@@ -99,7 +99,7 @@ def create_data_tables(processed_data_folders):
                 trial_id_with_offset = trial_record['trial_id'] + trial_offset
                 trials[trial_id_with_offset] = db.models.Trial_Record(
                     trial_id = trial_id_with_offset,
-                    lab_trial_id = (trial_record['trial_id'] if 'trial_id' in trial_record else None),
+                    lab_trial_id = (trial_record['lab_trial_id'] if 'lab_trial_id' in trial_record else None),
                     dataset =  datasets[trial_record['dataset_id'] + dataset_offset],
                     #dataset =  db.models.Dataset_Record.objects.get(dataset_id=trial_record['dataset_id']),
                     target_side =  (trial_record['target_side'] if 'target_side' in trial_record else None),
@@ -174,17 +174,7 @@ def create_data_tables(processed_data_folders):
         
 
 def process_peekbank_dirs(data_root):
-
-    # create_schema_models(schema_file)
-
-    # FIXME: Parallelize if possible as long as we can coordinate the indices
-    #multiprocessing.log_to_stderr()
-    #pool = multiprocessing.Pool()
-    #logger = multiprocessing.get_logger()
-    #logger.setLevel(logging.INFO)
-
     results = []
-
     all_dirs = [x[0] for x in os.walk(data_root)]
     processed_data_folders = [x for x in all_dirs if os.path.basename(x) == 'processed_data']
 
