@@ -20,17 +20,43 @@ And you should see the venv name in your shell (peekbank-env). Then install the 
 
 You should be ready to run the commands below.
 
+# Clearing the database and resetting indices
+
+From a SQL client:
+
+```delete from admin;
+delete from aoi_regions;
+delete from aoi_data;
+delete from datasets;
+delete from subjects;
+delete from trials;
+delete from xy_data;
+ALTER TABLE admin AUTO_INCREMENT = 1;
+ALTER TABLE aoi_regions AUTO_INCREMENT = 1;
+ALTER TABLE aoi_data AUTO_INCREMENT = 1;
+ALTER TABLE datasets AUTO_INCREMENT = 1;
+ALTER TABLE subjects AUTO_INCREMENT = 1;
+ALTER TABLE trials AUTO_INCREMENT = 1;
+ALTER TABLE xy_data AUTO_INCREMENT = 1
+```
 
 # Generate the Database Tables
 
-@MIKA FIXME: makemigrations
+`python manage.py makemigrations db`
+`python manage.py migrate db`
 
 # Populating the Database
 
 The database is populated using a Django management command:
 
-`python3 manage.py populate_db --data_root <data root, with projects as the top-level folders>` @MIKA @STEPHAN FIXME: args
+`python3 manage.py populate_db --data_root <data root, with projects as the top-level folders>`
 
 # Schema Specification
 
-The `peekbank` application uses a JSON-specified representation of the schema, in `static/`. This same schema is used by the peekds file readers to parse and validate input files.
+The `peekbank` application uses a JSON-specified representation of the schema, in `static/`. This same schema is used in three places:
+
+1) by the `peekds` file readers to parse and validate input files
+2) by `models.py` in Django to establish the data model and define migrations
+3) by `populate_peekbank2.py` to populate the fields from CSVs output by peekds 
+
+Foreign keys in the schema do not have `_id` at the end, because this is added by Django
