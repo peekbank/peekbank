@@ -35,6 +35,9 @@ def create_model(model_class, table, fields):
         field_name = field["field_name"]
         field_class = field_classes[field["field_class"]]
         options = {opt_name: process_option(opt_value) for opt_name, opt_value in field["options"].items()}
+        if field["field_class"] == "ForeignKey":
+            #special case for foreign keys to avoid appending _id
+            options['db_column'] = field_name
         field_class_init = field_class(**options)
         attrs[field_name] = field_class_init
 
