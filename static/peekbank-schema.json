@@ -24,7 +24,7 @@
         }
       },
       {
-        "field_name": "subject",
+        "field_name": "subject_id",
         "field_class": "ForeignKey",
         "options": {
           "to": "Subject_Record",
@@ -43,7 +43,7 @@
         }
       },
       {
-        "field_name": "trial",
+        "field_name": "trial_id",
         "field_class": "ForeignKey",
         "options": {
           "to": "Trial_Record",
@@ -219,6 +219,16 @@
         }
       },
       {
+        "field_name": "dataset_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Dataset_Record",
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
         "field_name": "age",
         "field_class": "IntegerField",
         "options": {
@@ -264,16 +274,17 @@
         }
       },
       {
-        "field_name": "aoi_region",
-        "field_class": "IntegerField",
+        "field_name": "aoi_region_id",
+        "field_class": "ForeignKey",
         "options": {          
+          "to": "AOI_Region_Record",
           "blank": true,
           "null": false,
           "default": "None"
         }
       },
       {
-        "field_name": "dataset",
+        "field_name": "dataset_id",
         "field_class": "ForeignKey",
         "options": {
           "to": "Dataset_Record",
@@ -283,33 +294,23 @@
         }
       },
       {
-        "field_name": "lab_trial_id",
-        "field_class": "CharField",
+        "field_name": "distractor_id",
+        "field_class": "ForeignKey",
         "options": {
+          "to": "Stimuli_Record",
           "blank": true,
-          "null": true,
-          "default": "None",
-          "max_length": 255
+          "null": false,
+          "default": "None"
         }
       },
       {
-        "field_name": "distractor_image",
-        "field_class": "CharField",
+        "field_name": "target_id",
+        "field_class": "ForeignKey",
         "options": {
+          "to": "Stimuli_Record",
           "blank": true,
-          "null": true,
-          "default": "None",
-          "max_length": 255
-        }
-      },
-      {
-        "field_name": "distractor_label",
-        "field_class": "CharField",
-        "options": {
-          "blank": true,
-          "null": true,
-          "default": "None",
-          "max_length": 255
+          "null": false,
+          "default": "None"
         }
       },
       {
@@ -331,27 +332,73 @@
         }
       },
       {
-        "field_name": "target_image",
-        "field_class": "CharField",
-        "options": {
-          "blank": true,
-          "null": true,
-          "default": "None",
-          "max_length": 255
-        }
-      },
-      {
-        "field_name": "target_label",
-        "field_class": "CharField",
-        "options": {
-          "blank": true,
-          "null": true,
-          "default": "None",
-          "max_length": 255
-        }
-      },
-      {
         "field_name": "target_side",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "lab_trial_id",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "Stimuli_Record",
+    "table": "stimuli",
+    "fields": [
+      {
+        "field_name": "stimulus_id",
+        "field_class": "IntegerField",
+        "options": {
+          "primary_key":true,
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "dataset_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Dataset_Record",
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "stimulus_label",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "stimulus_image",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "lab_stimulus_id",
         "field_class": "CharField",
         "options": {
           "blank": true,
@@ -377,7 +424,7 @@
         }
       },
       {
-        "field_name": "subject",
+        "field_name": "subject_id",
         "field_class": "ForeignKey",
         "options": {
           "to": "Subject_Record",
@@ -387,7 +434,7 @@
         }
       },
       {
-        "field_name": "trial",
+        "field_name": "trial_id",
         "field_class": "ForeignKey",
         "options": {
           "to": "Trial_Record",
