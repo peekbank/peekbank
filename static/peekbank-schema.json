@@ -270,11 +270,12 @@
       },
       {
         "field_name": "tracker",
-        "field_class": "IntegerField",
+        "field_class": "CharField",
         "options": {
           "blank": true,
           "null": true,
-          "default": "None"
+          "default": "None",
+          "max_length": 255
         }
       }
     ]
