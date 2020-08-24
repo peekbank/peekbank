@@ -1,10 +1,10 @@
 [
   {
-    "model_class": "AOI_Data_Record",
-    "table": "aoi_data",
+    "model_class": "AOI_Timepoint",
+    "table": "aoi_timepoints",
     "fields": [
       {
-        "field_name": "aoi_data_id",
+        "field_name": "aoi_timepoint_id",
         "field_class": "IntegerField",
         "options": {
           "primary_key":true,
@@ -24,10 +24,10 @@
         }
       },
       {
-        "field_name": "subject_id",
+        "field_name": "administration_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Subject_Record",
+          "to": "Administration",
           "blank": true,
           "null": false,
           "default": "None"
@@ -46,7 +46,7 @@
         "field_name": "trial_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Trial_Record",
+          "to": "Trial",
           "blank": true,
           "null": false,
           "default": "None"
@@ -55,11 +55,11 @@
     ]
   },
   {
-    "model_class": "AOI_Region_Record",
-    "table": "aoi_regions",
+    "model_class": "AOI_Region_Set",
+    "table": "aoi_region_sets",
     "fields": [
       {
-        "field_name": "aoi_region_id",
+        "field_name": "aoi_region_set_id",
         "field_class": "IntegerField",
         "options": {
           "primary_key":true,
@@ -143,7 +143,7 @@
     ]
   },
   {
-    "model_class": "Dataset_Record",
+    "model_class": "Dataset",
     "table": "datasets",
     "fields": [
       {
@@ -151,6 +151,91 @@
         "field_class": "IntegerField",
         "options": {
           "primary_key":true,
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },      
+      {
+        "field_name": "lab_dataset_id",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "name",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "shortcite",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "cite",
+        "field_class": "CharField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None",
+          "max_length": 1023
+        }
+      }
+    ]
+  },
+  {
+    "model_class": "Administration",
+    "table": "administrations",
+    "fields": [
+      {
+        "field_name": "administration_id",
+        "field_class": "IntegerField",
+        "options": {
+          "primary_key":true,
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "dataset_id",
+        "field_class": "ForeignKey",
+        "options": {
+          "to": "Dataset",
+          "blank": true,
+          "null": false,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "age",
+        "field_class": "IntegerField",
+        "options": {
+          "blank": true,
+          "null": true,
+          "default": "None"
+        }
+      },
+      {
+        "field_name": "subject_id",
+        "field_class": "ForeignKey",
+        "options": {          
+          "to": "Subject",
           "blank": true,
           "null": false,
           "default": "None"
@@ -191,21 +276,11 @@
           "null": true,
           "default": "None"
         }
-      },
-      {
-        "field_name": "lab_dataset_id",
-        "field_class": "CharField",
-        "options": {
-          "blank": true,
-          "null": true,
-          "default": "None",
-          "max_length": 255
-        }
       }
     ]
   },
   {
-    "model_class": "Subject_Record",
+    "model_class": "Subject",
     "table": "subjects",
     "fields": [
       {
@@ -218,25 +293,7 @@
           "default": "None"
         }
       },
-      {
-        "field_name": "dataset_id",
-        "field_class": "ForeignKey",
-        "options": {
-          "to": "Dataset_Record",
-          "blank": true,
-          "null": false,
-          "default": "None"
-        }
-      },
-      {
-        "field_name": "age",
-        "field_class": "IntegerField",
-        "options": {
-          "blank": true,
-          "null": true,
-          "default": "None"
-        }
-      },
+     
       {
         "field_name": "sex",
         "field_class": "CharField",
@@ -260,7 +317,7 @@
     ]
   },
   {
-    "model_class": "Trial_Record",
+    "model_class": "Trial",
     "table": "trials",
     "fields": [
       {
@@ -274,10 +331,10 @@
         }
       },
       {
-        "field_name": "aoi_region_id",
+        "field_name": "aoi_region_set_id",
         "field_class": "ForeignKey",
         "options": {          
-          "to": "AOI_Region_Record",
+          "to": "AOI_Region_Set",
           "blank": true,
           "null": false,
           "default": "None"
@@ -287,7 +344,7 @@
         "field_name": "dataset_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Dataset_Record",
+          "to": "Dataset",
           "blank": true,
           "null": false,
           "default": "None"
@@ -297,7 +354,7 @@
         "field_name": "distractor_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Stimuli_Record",
+          "to": "Stimulus_Set",
           "blank": true,
           "null": false,
           "default": "None"
@@ -307,7 +364,7 @@
         "field_name": "target_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Stimuli_Record",
+          "to": "Stimulus_Set",
           "blank": true,
           "null": false,
           "default": "None"
@@ -354,11 +411,11 @@
     ]
   },
   {
-    "model_class": "Stimuli_Record",
-    "table": "stimuli",
+    "model_class": "stimulus_set",
+    "table": "stimulus_sets",
     "fields": [
       {
-        "field_name": "stimulus_id",
+        "field_name": "stimulus_set_id",
         "field_class": "IntegerField",
         "options": {
           "primary_key":true,
@@ -371,7 +428,7 @@
         "field_name": "dataset_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Dataset_Record",
+          "to": "Dataset",
           "blank": true,
           "null": false,
           "default": "None"
@@ -410,11 +467,11 @@
     ]
   },
   {
-    "model_class": "XY_Data_Record",
-    "table": "xy_data",
+    "model_class": "XY_Timepoint",
+    "table": "xy_timepoints",
     "fields": [
       {
-        "field_name": "xy_data_id",
+        "field_name": "xy_timepoint_id",
         "field_class": "IntegerField",
         "options": {
           "primary_key":true,
@@ -424,10 +481,10 @@
         }
       },
       {
-        "field_name": "subject_id",
+        "field_name": "administration_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Subject_Record",
+          "to": "Administration",
           "blank": true,
           "null": false,
           "default": "None"
@@ -437,7 +494,7 @@
         "field_name": "trial_id",
         "field_class": "ForeignKey",
         "options": {
-          "to": "Trial_Record",
+          "to": "Trial",
           "blank": true,
           "null": false,
           "default": "None"
@@ -464,7 +521,7 @@
     ]
   },
   {
-    "model_class": "Admin_Record",
+    "model_class": "Admin",
     "table": "admin",
     "fields": [
       {
