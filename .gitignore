@@ -5,3 +5,8 @@
 *.pyc
 config.json
 *env/
+
+
+# Vim
+
+*~
