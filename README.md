@@ -40,6 +40,12 @@ ALTER TABLE trials AUTO_INCREMENT = 1;
 ALTER TABLE xy_data AUTO_INCREMENT = 1
 ```
 
+Or, to save yourself typing:
+
+```delete from admin batch;
+mysql <name-of-db> < static/clear_db_reset_indices.sql
+```
+
 # Generate the Database Tables
 
 `python manage.py makemigrations db`
