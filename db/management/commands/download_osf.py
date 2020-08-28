@@ -17,7 +17,8 @@ from pathlib import Path
 
 BASE_OSF_URL = 'https://api.osf.io/v2/nodes/pr6wu/files/osfstorage/'
 
-TOP_LEVEL_DIRECTORY = os.path.abspath(os.path.join(__file__, "../../../../data"))
+TOP_LEVEL_DIRECTORY = os.path.abspath("/home/ubuntu/peekbank_data_osf")
+#TOP_LEVEL_DIRECTORY = os.path.abspath(os.path.join(__file__, "../../../../data"))
 
 
 class Command(BaseCommand):
@@ -26,29 +27,30 @@ class Command(BaseCommand):
 
 
     def gather_folders(self):
+        print('Gathering folders....')
         payload = {'filter[kind]': 'folder'}
         r = requests.get(BASE_OSF_URL, params = payload)
-        response = json.loads(r.content)
+        response = json.loads(r.content.decode('utf-8'))
         return [folder for folder in response['data']]
 
     def find_processed_folder(self, folder):
+        print('Finding processed folders...')
         # The empty string in os.path.join is to add a path separator to the end. 
         r = requests.get(os.path.join(BASE_OSF_URL, folder['id'], ''))
-        response_dict = json.loads(r.content)
+        response_dict = json.loads(r.content.decode('utf-8'))
         for item in response_dict['data']:
             if item['attributes']['name'] == 'processed_data':
                 return item
 
     def download_processed_data(self, folder):
+        print('Downloading processed data...')
         r = requests.get(os.path.join(BASE_OSF_URL, folder['id'], ''))
-        response_dict = json.loads(r.content)
+        response_dict = json.loads(r.content.decode('utf-8'))
         for item in response_dict['data']:
             if item:
                 file_name = item['attributes']['name']
                 materialized_path = item['attributes']['materialized_path']
-                file_hashes = item['attributes']['extra']['hashes']
-
-
+                #file_hashes = item['attributes']['extra']['hashes']
 
 
                 # The real path at which this file will be saved
@@ -65,25 +67,16 @@ class Command(BaseCommand):
                 with open(file_path, 'wb') as fd:
                     fd.write(r.content)
 
-
-                hash_file = Path(file_path).with_suffix('.json')
-                with open(hash_file, 'w') as fd:
-                    json.dump(file_hashes, fd)
+                # hash_file = Path(file_path).with_suffix('.json')
+                # with open(hash_file, 'w') as fd:
+                #     json.dump(file_hashes, fd)
         
         return
 
-
-        
-
-
-
-
-
-
 #r = requests.get(my_dict['data'][0]['relationships']['files']['links']['related']['href'])
 
-
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  
+        print('Handling...')      
         self.stdout.write(json.loads(r.content))
 
 
@@ -98,10 +91,11 @@ if __name__ == "__main__":
 
 
     c = Command()
+    print('Gathering folders from main script...')
     folders = c.gather_folders()
 
 
-    for folder in folders:
+    for folder in folders:        
         processed = c.find_processed_folder(folder)
         c.download_processed_data(processed)
 

@@ -22,7 +22,7 @@ def getDictsWithKeyForValue(dict_list, key, value):
             rv.append(item)
     return rv
 
-def CSV_to_Django(data_folder, schema, dataset_type, dependencies=None, optional=False):
+def CSV_to_Django(data_folder, schema, dataset_type, offsets, dependencies=None, optional=False):
 
     class_names = dict([(x['table'],x['model_class']) for x in schema])
     table_names = dict([(x['model_class'],x['table']) for x in schema])
@@ -38,8 +38,7 @@ def CSV_to_Django(data_folder, schema, dataset_type, dependencies=None, optional
     else:
         print('Processing '+csv_path+'...')
         df = pd.read_csv(csv_path)
-        df = df.where((pd.notnull(df)), None) # replace nans with Nones
-        offset =  getattr(db.models, class_names[dataset_type]).objects.count()
+        df = df.where((pd.notnull(df)), None) # replace nans with Nones        
         rdict = {}         
 
         for record in df.to_dict('records'):
@@ -64,8 +63,19 @@ def CSV_to_Django(data_folder, schema, dataset_type, dependencies=None, optional
                     if dependencies[fk_to_table] is None:
                         # special case when a fk_to table does not exist, e.g. aoi_region_sets
                         payload[fk_field] = None
-                    else:                        
-                        payload[fk_field] = dependencies[fk_to_table][record_default[fk_field]]
+                    else: 
+                        try:
+                            if fk_field in ('distractor_id', 'target_id'):
+                                # special case where the pk of the destination/to table is different than the local key (trials -> stimulis)
+                                fk_remap = "stimulus_id"
+                            else:
+                                fk_remap = fk_field
+                            
+                            payload[fk_field] = dependencies[fk_to_table][record_default[fk_field] + offsets[fk_remap]]
+                        except:
+                            print('Foreign key indexing error! Go find Stephan')
+                            import pdb
+                            pdb.set_trace()
                     
                 else:
                     # check if is the table name
@@ -77,13 +87,13 @@ def CSV_to_Django(data_folder, schema, dataset_type, dependencies=None, optional
                         pdb.set_trace()
                         raise ValueError('No value found for field '+field['field_name'])
                         
-                    # Add the offset to the primary key
-                    payload[primary_key] += offset                    
+            # Add the offset to the primary key            
+            payload[primary_key] += offsets[primary_key]                    
             
             data_model = getattr(db.models, class_names[dataset_type])
             rdict[payload[primary_key]] = data_model(**payload)
 
-        getattr(db.models, class_names[dataset_type]).objects.bulk_create(rdict.values())
+        getattr(db.models, class_names[dataset_type]).objects.bulk_create(rdict.values(), batch_size = 1000)
         return(rdict)
 
             
@@ -91,14 +101,35 @@ def CSV_to_Django(data_folder, schema, dataset_type, dependencies=None, optional
 def create_data_tables(processed_data_folders, schema):    
 
     for data_folder in processed_data_folders:                    
-        aoi_region_sets = CSV_to_Django(data_folder, schema, 'aoi_region_sets', optional=True)
-        datasets = CSV_to_Django(data_folder, schema, 'datasets')
-        subjects = CSV_to_Django(data_folder, schema, 'subjects', dependencies={'datasets':datasets})
-        administrations = CSV_to_Django(data_folder, schema, 'administrations', dependencies = {'subjects':subjects, 'datasets':datasets})
-        stimuli = CSV_to_Django(data_folder, schema, 'stimuli', dependencies = {'datasets':datasets})
-        trials = CSV_to_Django(data_folder, schema, 'trials', dependencies = {'datasets':datasets, "aoi_region_sets": aoi_region_sets, 'stimuli':stimuli})
-        aoi_timepoints = CSV_to_Django(data_folder, schema, 'aoi_timepoints', dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations})
-        xy_timepoints = CSV_to_Django(data_folder, schema, 'xy_timepoints', dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations}, optional=True)
+
+        # check if we need to process it
+        dataset_name = pd.read_csv(os.path.join(data_folder, 'datasets.csv')).iloc[0].dataset_name
+
+        dataset_model = getattr(db.models, 'Dataset')
+        qs = dataset_model.objects.filter(dataset_name=dataset_name)
+        if len(qs) > 0:
+            print(dataset_name + ' is already in the database, skipping...')
+            continue
+
+        # pre-compute the offsets for all tables so that the indexing can be consistent
+        # offsets: pk for each table -> offset value, dataset_id -> 59
+        table_names = dict([(x['model_class'],x['table']) for x in schema])
+        offsets = {}
+        for class_name in table_names.keys():
+            class_def = getDictsWithKeyForValue(schema, "model_class", class_name)[0]
+
+            primary_key = [x for x in class_def['fields'] if 'primary_key' in x['options']][0]['field_name']
+            offset_value = getattr(db.models, class_name).objects.count()
+            offsets[primary_key] = offset_value 
+
+        aoi_region_sets = CSV_to_Django(data_folder, schema, 'aoi_region_sets', offsets, optional=True)
+        datasets = CSV_to_Django(data_folder, schema, 'datasets', offsets)
+        subjects = CSV_to_Django(data_folder, schema, 'subjects', offsets, dependencies={'datasets':datasets})
+        administrations = CSV_to_Django(data_folder, schema, 'administrations', offsets, dependencies = {'subjects':subjects, 'datasets':datasets})
+        stimuli = CSV_to_Django(data_folder, schema, 'stimuli', offsets, dependencies = {'datasets':datasets})
+        trials = CSV_to_Django(data_folder, schema, 'trials', offsets, dependencies = {'datasets':datasets, "aoi_region_sets": aoi_region_sets, 'stimuli':stimuli})
+        aoi_timepoints = CSV_to_Django(data_folder, schema, 'aoi_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations})
+        xy_timepoints = CSV_to_Django(data_folder, schema, 'xy_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations}, optional=True)
     
 
 def process_peekbank_dirs(data_root):    
