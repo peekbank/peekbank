@@ -5,4 +5,14 @@
 *.pyc
 config.json
 *env/
+data/
+
+
+# Vim
+*~
+*.swp
+
+# pyenv
+.python-version
+
 

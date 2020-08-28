@@ -48,6 +48,9 @@ class Command(BaseCommand):
                 materialized_path = item['attributes']['materialized_path']
                 file_hashes = item['attributes']['extra']['hashes']
 
+
+
+
                 # The real path at which this file will be saved
                 file_path = os.path.join(TOP_LEVEL_DIRECTORY, *materialized_path.split('/'))
 
@@ -63,9 +66,9 @@ class Command(BaseCommand):
                     fd.write(r.content)
 
 
-
-
-
+                hash_file = Path(file_path).with_suffix('.json')
+                with open(hash_file, 'w') as fd:
+                    json.dump(file_hashes, fd)
         
         return
 
