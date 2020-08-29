@@ -22,6 +22,9 @@ You should be ready to run the commands below.
 
 # Clearing the database and resetting indices
 
+If you are making changes, set up the development database with `./new_dev_db.sh`
+To migrate changes to the dev database to production (`peekbank`), run `./dev_to_prod.sh` 
+Before running either script for the first time, run `chmod +x [filename]`
 From a SQL client:
 
 ```delete from admin;
