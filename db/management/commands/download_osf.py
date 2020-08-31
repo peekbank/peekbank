@@ -7,6 +7,10 @@ import json
 import errno
 from pathlib import Path
 
+from django.conf import settings
+
+from pdb import set_trace as st
+
 
 # TODO: Add pagination support.
 # TODO: Turn into a django management command!
@@ -17,7 +21,10 @@ from pathlib import Path
 
 BASE_OSF_URL = 'https://api.osf.io/v2/nodes/pr6wu/files/osfstorage/'
 
-TOP_LEVEL_DIRECTORY = os.path.abspath("/home/ubuntu/peekbank_data_osf")
+
+TOP_LEVEL_DIRECTORY = os.path.abspath(os.path.join(settings.BASE_DIR, 'data'))
+
+#TOP_LEVEL_DIRECTORY = os.path.abspath("/home/ubuntu/peekbank_data_osf")
 #TOP_LEVEL_DIRECTORY = os.path.abspath(os.path.join(__file__, "../../../../data"))
 
 
@@ -77,27 +84,25 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):  
         print('Handling...')      
-        self.stdout.write(json.loads(r.content))
 
+        try:
+            os.mkdir(TOP_LEVEL_DIRECTORY)
 
-if __name__ == "__main__":
-
-    try:
-        os.mkdir(TOP_LEVEL_DIRECTORY)
-
-    except FileExistsError:
-        print('Data directory already exists')
+        except FileExistsError:
+            print('Data directory already exists')
 
 
 
-    c = Command()
-    print('Gathering folders from main script...')
-    folders = c.gather_folders()
+        print('Gathering folders from main script...')
+        folders = self.gather_folders()
 
 
-    for folder in folders:        
-        processed = c.find_processed_folder(folder)
-        c.download_processed_data(processed)
+        for folder in folders:        
+            processed = self.find_processed_folder(folder)
+            if processed:
+                self.download_processed_data(processed)
+
+
 
 
 
