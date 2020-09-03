@@ -22,9 +22,9 @@ from pdb import set_trace as st
 BASE_OSF_URL = 'https://api.osf.io/v2/nodes/pr6wu/files/osfstorage/'
 
 
-TOP_LEVEL_DIRECTORY = os.path.abspath(os.path.join(settings.BASE_DIR, 'data'))
+#TOP_LEVEL_DIRECTORY = os.path.abspath(os.path.join(settings.BASE_DIR, 'data'))
 
-#TOP_LEVEL_DIRECTORY = os.path.abspath("/home/ubuntu/peekbank_data_osf")
+TOP_LEVEL_DIRECTORY = os.path.abspath("/home/ubuntu/peekbank_data_osf")
 #TOP_LEVEL_DIRECTORY = os.path.abspath(os.path.join(__file__, "../../../../data"))
 
 
