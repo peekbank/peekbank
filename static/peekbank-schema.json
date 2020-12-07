@@ -320,7 +320,7 @@
     "table": "trial_types",
     "fields": [
       {
-        "field_name": "trial_id",
+        "field_name": "trial_type_id",
         "field_class": "IntegerField",
         "options": {
           "primary_key":true,
