@@ -445,24 +445,6 @@
           "to": "Trial_Type",
           "null": false
         }
-      },
-      {
-        "field_name": "shortcite",
-        "field_class": "CharField",
-        "options": {
-          "null": true,
-          "default": "None",
-          "max_length": 255
-        }
-      },
-      {
-        "field_name": "cite",
-        "field_class": "CharField",
-        "options": {
-          "null": true,
-          "default": "None",
-          "max_length": 1023
-        }
       }
     ]
   },
