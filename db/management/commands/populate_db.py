@@ -1,7 +1,7 @@
 import os
 from django.conf import settings
 from django.core.management import BaseCommand
-from populate_peekbank2 import process_peekbank_dirs
+from populate_peekbank import process_peekbank_dirs
 
 #The class must be named Command, and subclass BaseCommand
 class Command(BaseCommand):
