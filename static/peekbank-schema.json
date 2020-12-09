@@ -561,7 +561,7 @@
         }
       },
       {
-        "field_name": "t",
+        "field_name": "t_norm",
         "field_class": "IntegerField",
         "options": {
           "null": false
