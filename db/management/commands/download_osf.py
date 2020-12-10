@@ -38,7 +38,10 @@ class Command(BaseCommand):
         payload = {'filter[kind]': 'folder'}
         r = requests.get(BASE_OSF_URL, params = payload)
         response = json.loads(r.content.decode('utf-8'))
-        return [folder for folder in response['data']]
+        folders = [folder for folder in response['data']]
+        print("Found the following folders:")
+        print(folders)
+        return folders
 
     def find_processed_folder(self, folder):
         print('Finding processed folders...')
