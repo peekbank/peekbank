@@ -6,33 +6,25 @@ import os.path
 import json
 import errno
 from pathlib import Path
-
 from django.conf import settings
-
 from pdb import set_trace as st
 
 
-# TODO: Add pagination support. WE DID IT HAHAHAHAHAHAHAHAHAAH
-# TODO: Turn into a django management command! DONE ATAHAHFASHFAHSDHAHASHFASDFAHDSFH
-# TODO: Just very, very, very ugly/shotgun code here :(
-# TODO: Add error handling/
-# TODO: Multiprocessing ??
+# TODO: Add error handling
+# TODO: Multiprocessing?
 # TODO: Fix the awful directory/paths (replace with tempdir/files?)
-# TODO: add tqdm for progress
+# TODO: Add tqdm for progress
 # TODO: Graceful interrupt handling
-
 
 # Visit this url to see what the json response will look like.
 BASE_OSF_URL = 'https://api.osf.io/v2/nodes/pr6wu/files/osfstorage/'
 
-
-
-TOP_LEVEL_DIRECTORY = os.path.abspath("/home/sarp/ubuntu/peekbank_data_osf")
-
-
 class Command(BaseCommand):
 
     help = 'Downloads data from OSF'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--data_root', help='Root directory where to download files')
 
 
     def gather_folders(self):
@@ -52,19 +44,19 @@ class Command(BaseCommand):
         r = requests.get(url, params = payload)
         response = json.loads(r.content.decode('utf-8'))
         folders.extend([folder for folder in response['data']])
-        return response['links']['next'] 
+        return response['links']['next']
 
 
     def find_processed_folder(self, folder):
         print('Finding processed folders...')
-        # The empty string in os.path.join is to add a path separator to the end. 
+        # The empty string in os.path.join is to add a path separator to the end.
         r = requests.get(os.path.join(BASE_OSF_URL, folder['id'], ''))
         response_dict = json.loads(r.content.decode('utf-8'))
         for item in response_dict['data']:
             if item['attributes']['name'] == 'processed_data':
                 return item
 
-    def download_processed_data(self, folder):
+    def download_processed_data(self, folder, data_root):
         print('Downloading processed data...')
         print('Downloading folder: {}'.format(folder['attributes']['materialized_path']))
         r = requests.get(os.path.join(BASE_OSF_URL, folder['id'], ''))
@@ -74,7 +66,7 @@ class Command(BaseCommand):
                 file_name = item['attributes']['name']
                 materialized_path = item['attributes']['materialized_path']
 
-                file_path = os.path.join(TOP_LEVEL_DIRECTORY, *materialized_path.split('/'))
+                file_path = os.path.join(data_root, *materialized_path.split('/'))
 
                 if not os.path.exists(os.path.dirname(file_path)):
                     try:
@@ -86,38 +78,26 @@ class Command(BaseCommand):
                 r = requests.get(item['links']['download'])
                 with open(file_path, 'wb') as fd:
                     fd.write(r.content)
-        
+
         return
 
-    def handle(self, *args, **options):  
-        print('Handling...')      
+    def handle(self, *args, **options):
+        data_root = options.get('data_root')
+        print('Called download_osf with data_root '+data_root)
 
         try:
-            os.mkdir(TOP_LEVEL_DIRECTORY)
-
+            os.mkdir(data_root)
         except FileExistsError:
             print('Data directory already exists')
 
-
-
-        print('Gathering folders from main script...')
+        print('Gathering folders...')
         folders = self.gather_folders()
 
-
         processed_list = []
-        for folder in folders:        
+        for folder in folders:
             processed = self.find_processed_folder(folder)
             processed_list.append(processed)
             if processed:
-                self.download_processed_data(processed)
+                self.download_processed_data(processed, data_root)
         print('Found these processed folders')
         print(processed_list)
-
-
-
-
-
-
-
-
-
