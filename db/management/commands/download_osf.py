@@ -6,6 +6,7 @@ import os.path
 import json
 import errno
 from pathlib import Path
+from pprint import pprint
 from django.conf import settings
 from pdb import set_trace as st
 
@@ -36,8 +37,8 @@ class Command(BaseCommand):
             current_link = self.collect_page(current_link, payload, folders)
 
         print("Found the following folders:")
-        print([folder['attributes']['materialized_path'] for folder in folders])
-
+        pprint([folder['attributes']['materialized_path'] for folder in folders])
+        print("\n\n")
         return folders
 
     def collect_page(self, url, payload, folders):
@@ -48,16 +49,18 @@ class Command(BaseCommand):
 
 
     def find_processed_folder(self, folder):
-        print('Finding processed folders...')
-        # The empty string in os.path.join is to add a path separator to the end.
+        print('Finding processed_data subfolder for {}'.format(folder['attributes']['name']))
+        # The empty string in os.path.join is to add a path separator to the end. 
         r = requests.get(os.path.join(BASE_OSF_URL, folder['id'], ''))
         response_dict = json.loads(r.content.decode('utf-8'))
         for item in response_dict['data']:
             if item['attributes']['name'] == 'processed_data':
+                print('processed_data subfolder found!')
                 return item
+        else:
+            print('no processed_data subfolder exists for {}'.format(folder['attributes']['name']))
 
     def download_processed_data(self, folder, data_root):
-        print('Downloading processed data...')
         print('Downloading folder: {}'.format(folder['attributes']['materialized_path']))
         r = requests.get(os.path.join(BASE_OSF_URL, folder['id'], ''))
         response_dict = json.loads(r.content.decode('utf-8'))
@@ -78,7 +81,6 @@ class Command(BaseCommand):
                 r = requests.get(item['links']['download'])
                 with open(file_path, 'wb') as fd:
                     fd.write(r.content)
-
         return
 
     def handle(self, *args, **options):
@@ -94,10 +96,22 @@ class Command(BaseCommand):
         folders = self.gather_folders()
 
         processed_list = []
+        unprocessed_list = []
         for folder in folders:
             processed = self.find_processed_folder(folder)
-            processed_list.append(processed)
             if processed:
                 self.download_processed_data(processed, data_root)
+                processed_list.append(processed)
+            else:
+                unprocessed_list.append(folder)
+            print("\n\n")
+
         print('Found these processed folders')
-        print(processed_list)
+        pprint([processed['attributes']['materialized_path'] for processed in processed_list])
+
+        print('\n')
+
+        print('Nothing downloaded for these corpora, most likely because they don\'t have processed_data subfolder.')
+        pprint([folder['attributes']['name'] for folder in unprocessed_list])
+
+
