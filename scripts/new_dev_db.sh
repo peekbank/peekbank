@@ -6,4 +6,4 @@ cd ../
 python manage.py makemigrations db
 python manage.py migrate db
 echo "Populating....."
-python3 manage.py populate_db --data_root /home/sarp/projects/langcog/peekbank_data_root
+python3 manage.py populate_db --data_root /home/ubuntu/peekbank_data/
