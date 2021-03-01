@@ -4,6 +4,10 @@ This repository contains a Django app that populates the peekbank database.
 
 # Prerequisites
 
+Make sure that you have mysql server set up. For a debian based OS, this is most likely as simple as running `sudo apt install mysql-server`. 
+However, you will also need to figure out user accounts in the database with appropriate privileges. The `config.json` should give you 
+some hints. Modify according to your environment.
+
 First get the `config.json` file with database credentials and place them in the root of this repo (which is a Django project)
 
 Set up a virtual environment; by convention `peekbank-env.` 
@@ -17,6 +21,8 @@ Change python3 to a specific path if you want to use a specific Python installat
 And you should see the venv name in your shell (peekbank-env). Then install the requirements to the venv:
 
 `pip3 install -r requirements.txt`
+
+At this step, if you get an error related to missing `mysql_config` file, make sure that you install the package `libmysqlclient-dev` with `sudo apt install libmysqlclient-dev` (or something similar depending on your OS)
 
 You should be ready to run the commands below.
 
