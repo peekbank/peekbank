@@ -267,7 +267,8 @@
           "null": true,
           "default": "None",
           "max_length": 255,
-          "choices": [["eyetracking", "eyetracking"], ["manual gaze coding", "manual gaze coding"], ["automated gaze coding", "automated gaze coding"]]
+          "choices": [["eyetracking", "eyetracking"], ["manual gaze coding", "manual gaze coding"], ["automated gaze coding", "automated gaze coding"],
+        ["preprocessed eyetracking", "preprocessed eyetracking"]]
         }
       }
     ]
