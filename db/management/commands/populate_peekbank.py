@@ -22,7 +22,7 @@ def getDictsWithKeyForValue(dict_list, key, value):
             rv.append(item)
     return rv
 
-def CSV_to_Django(data_folder, schema, dataset_type, offsets, dependencies=None, optional=False):
+def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, dependencies=None, optional=False):
 
     class_names = dict([(x['table'],x['model_class']) for x in schema])
     table_names = dict([(x['model_class'],x['table']) for x in schema])
@@ -34,7 +34,7 @@ def CSV_to_Django(data_folder, schema, dataset_type, offsets, dependencies=None,
             pass
         else:
             print(os.path.join(data_folder, dataset_type+'.csv')+ ' is missing; aborting.')
-            raise ValueError() #FIXME -- need a way to abort further processing for this dataset from inside the function
+            raise ValueError(os.path.join(data_folder, dataset_type+'.csv')+ ' is missing; aborting.') #FIXME -- need a way to abort further processing for this dataset from inside the function
     else:
         print('Processing '+csv_path+'...')
         df = pd.read_csv(csv_path)
@@ -74,8 +74,9 @@ def CSV_to_Django(data_folder, schema, dataset_type, offsets, dependencies=None,
                             payload[fk_field] = dependencies[fk_to_table][record_default[fk_field] + offsets[fk_remap]]
                         except:
                             print('Foreign key indexing error! Go find Stephan')
-                            import pdb
-                            pdb.set_trace()
+                            #import pdb
+                            #pdb.set_trace()
+                            raise ValueError('Foreign key indexing error! Go find Stephan')
 
                 else:
                     # check if is the table name
@@ -83,8 +84,8 @@ def CSV_to_Django(data_folder, schema, dataset_type, offsets, dependencies=None,
                         #print('Populating '+dataset_type+'.'+field['field_name']+' normally...')
                         payload[field['field_name']] = record_default[field['field_name']]
                     else:
-                        import pdb
-                        pdb.set_trace()
+                        #import pdb
+                        #pdb.set_trace()
                         raise ValueError('No value found for field '+field['field_name'])
 
             # Add the offset to the primary key
@@ -93,8 +94,12 @@ def CSV_to_Django(data_folder, schema, dataset_type, offsets, dependencies=None,
             data_model = getattr(db.models, class_names[dataset_type])
             rdict[payload[primary_key]] = data_model(**payload)
 
-        getattr(db.models, class_names[dataset_type]).objects.bulk_create(rdict.values(), batch_size = 1000)
+        bulk_args.append((class_names[dataset_type], rdict))
         return(rdict)
+
+def bulk_create_tables(bulk_args):
+    for arg in bulk_args:
+        getattr(db.models, arg[0]).objects.bulk_create(arg[1].values(), batch_size = 1000)
 
 
 
@@ -122,20 +127,30 @@ def create_data_tables(processed_data_folders, schema):
             offset_value = getattr(db.models, class_name).objects.count()
             offsets[primary_key] = offset_value
 
-        aoi_region_sets = CSV_to_Django(data_folder, schema, 'aoi_region_sets', offsets, optional=True)
-        datasets = CSV_to_Django(data_folder, schema, 'datasets', offsets)
-        subjects = CSV_to_Django(data_folder, schema, 'subjects', offsets, dependencies={'datasets':datasets})
-        administrations = CSV_to_Django(data_folder, schema, 'administrations', offsets, dependencies = {'subjects':subjects, 'datasets':datasets})
-        stimuli = CSV_to_Django(data_folder, schema, 'stimuli', offsets, dependencies = {'datasets':datasets})
-        trial_types = CSV_to_Django(data_folder, schema, 'trial_types', offsets, dependencies = {'datasets':datasets, 'aoi_region_sets':aoi_region_sets, 'stimuli':stimuli})
-        trials = CSV_to_Django(data_folder, schema, 'trials', offsets, dependencies = {'datasets':datasets, "aoi_region_sets": aoi_region_sets, 'stimuli':stimuli, 'trial_types':trial_types})
-        aoi_timepoints = CSV_to_Django(data_folder, schema, 'aoi_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations})
-        xy_timepoints = CSV_to_Django(data_folder, schema, 'xy_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations}, optional=True)
+        bulk_args = []
+        
+        try:
+            aoi_region_sets = CSV_to_Django(bulk_args, data_folder, schema, 'aoi_region_sets', offsets, optional=True)
+            datasets = CSV_to_Django(bulk_args, data_folder, schema, 'datasets', offsets)
+            subjects = CSV_to_Django(bulk_args, data_folder, schema, 'subjects', offsets, dependencies={'datasets':datasets})
+            administrations = CSV_to_Django(bulk_args, data_folder, schema, 'administrations', offsets, dependencies = {'subjects':subjects, 'datasets':datasets})
+            stimuli = CSV_to_Django(bulk_args, data_folder, schema, 'stimuli', offsets, dependencies = {'datasets':datasets})
+            trial_types = CSV_to_Django(bulk_args, data_folder, schema, 'trial_types', offsets, dependencies = {'datasets':datasets, 'aoi_region_sets':aoi_region_sets, 'stimuli':stimuli})
+            trials = CSV_to_Django(bulk_args, data_folder, schema, 'trials', offsets, dependencies = {'datasets':datasets, "aoi_region_sets": aoi_region_sets, 'stimuli':stimuli, 'trial_types':trial_types})
+            aoi_timepoints = CSV_to_Django(bulk_args, data_folder, schema, 'aoi_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations})
+            xy_timepoints = CSV_to_Django(bulk_args, data_folder, schema, 'xy_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations}, optional=True)
 
+        except ValueError as e:
+            print(e)
+            continue
+
+        else:
+            bulk_create_tables(bulk_args)
 
 def process_peekbank_dirs(data_root):
     schema = json.load(open(settings.SCHEMA_FILE))
 
+    # FIXME: If data_root does not exist/is not accessible, this part silently fails. Do something else/warn the user instead!
     all_dirs = [x[0] for x in os.walk(data_root)]
     print(all_dirs)
     processed_data_folders = [x for x in all_dirs if os.path.basename(x) == 'processed_data']
