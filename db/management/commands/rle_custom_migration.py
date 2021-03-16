@@ -10,6 +10,8 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             cursor.execute(
             """
+    DROP TABLE IF EXISTS aoi_timepoints_indexed;
+    DROP TABLE IF EXISTS aoi_timepoints_rle;
     create table aoi_timepoints_indexed as
     select aoi_timepoints.*,
             (row_number() over (partition by administration_id, trial_id order by t_norm) -
