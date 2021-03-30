@@ -512,7 +512,26 @@
         "options": {
           "null": true,
           "default": "None",
+          "max_length": 255          
+        }
+      },
+      {
+        "field_name": "image_description",
+        "field_class": "CharField",
+        "options": {
+          "null": true,
+          "default": "None",
           "max_length": 255
+        }
+      },
+      {
+        "field_name": "image_description_source",
+        "field_class": "CharField",
+        "options": {
+          "null": true,
+          "default": "None",
+          "max_length": 255,
+          "choices": [["image path", "image path"], ["experiment documentation", "experiment documentation"], ["Peekbank discretion", "Peekbank discretion"]]
         }
       }
     ]
