@@ -26,31 +26,13 @@ At this step, if you get an error related to missing `mysql_config` file, make s
 
 You should be ready to run the commands below.
 
-# Streamlined Update
+# Update the Database, Using Versioning
 
-The general workflow is to run `./new_dev_db.sh` to drop an existing `peekbank_dev` database (if it exists), create a new one, invoke Django migrations to enforce the correct schema, and invoke the Django populate command.
-If the results of this look good, you can  migrate changes to the dev database to production (`peekbank`) with `./dev_to_prod.sh` 
-Before running either script for the first time, you need to make them executable with `chmod +x [filename]`.
+The general workflow is to run `./new_dev_db.sh` to drop an existing `peekbank_dev` database (if it exists), create a new one, invoke Django migrations to enforce the correct schema, and invoke the Django populate command. This then runs a special Django management command
 
+If the results of this look good when inspected with an SQL client (and, when we have them, pass tests), you can promote the dev database to production with `./dev_to_prod.sh`. If an argument is supplied to this script (e.g., `./dev_to_prod.sh 2021.1`) , then it populates a production database with the argument value, otherwise it writes to the database `peekbank`.  
+Before running either shell script for the first time, you need to make them executable with `chmod +x [filename]`.
 
-# Piece-by-Piece Update
-
-## Create Database
-
-`create database peekbank_dev`
-
-## Enforce the Schema
-
-`python manage.py makemigrations db`
-`python manage.py migrate db`
-
-# Populate the Database
-
-The database is populated using a Django management command:
-
-`python3 manage.py populate_db --data_root <data root, with projects as the top-level folders>`
-
-To drop into pdb on error, use `python3 -m pdb -c c manage.py populate_db --data_root <data root, with projects as the top-level folders>`
 
 # Schema Specification
 
