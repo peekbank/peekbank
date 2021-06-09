@@ -6,4 +6,5 @@ cd ../
 python manage.py makemigrations db
 python manage.py migrate db
 echo "Populating....."
-python3 manage.py populate_db --data_root /home/ubuntu/peekbank_data/
+python3 manage.py populate_db --data_root /home/ubuntu/peekbank_data
+python manage.py rle_custom_migration
