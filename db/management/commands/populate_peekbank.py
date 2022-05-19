@@ -3,6 +3,7 @@ import os
 import json
 import django
 from django.db.models import Avg, Count, Sum
+from django.db import reset_queries
 import pandas as pd
 import db.models
 from django.conf import settings
@@ -128,7 +129,7 @@ def create_data_tables(processed_data_folders, schema):
             offsets[primary_key] = offset_value
 
         bulk_args = []
-        
+
         try:
             aoi_region_sets = CSV_to_Django(bulk_args, data_folder, schema, 'aoi_region_sets', offsets, optional=True)
             datasets = CSV_to_Django(bulk_args, data_folder, schema, 'datasets', offsets)
@@ -146,6 +147,7 @@ def create_data_tables(processed_data_folders, schema):
 
         else:
             bulk_create_tables(bulk_args)
+            reset_queries()
 
 def process_peekbank_dirs(data_root):
     schema = json.load(open(settings.SCHEMA_FILE))
