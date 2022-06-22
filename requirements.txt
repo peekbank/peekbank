@@ -1,7 +1,7 @@
 Django==1.11.29
 django-extensions==3.0.5
 mysqlclient==1.4.4
-numpy==1.18.5
+numpy==1.22.0
 osfclient==0.0.4
 pandas==0.24.2
 pathlib==1.0.1
