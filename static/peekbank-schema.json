@@ -170,6 +170,13 @@
           "default": "None",
           "max_length": 1023
         }
+      },
+      {
+        "field_name": "aux_data",
+        "field_class": "JSONField",
+        "options": {          
+          "null": true
+        }
       }
     ]
   },
@@ -270,6 +277,13 @@
           "choices": [["eyetracking", "eyetracking"], ["manual gaze coding", "manual gaze coding"], ["automated gaze coding", "automated gaze coding"],
         ["preprocessed eyetracking", "preprocessed eyetracking"]]
         }
+      },
+      {
+        "field_name": "aux_data",
+        "field_class": "JSONField",
+        "options": {          
+          "null": true
+        }
       }
     ]
   },
@@ -312,6 +326,13 @@
           "null": true,
           "default": "None",
           "max_length": 255
+        }
+      },
+      {
+        "field_name": "aux_data",
+        "field_class": "JSONField",
+        "options": {          
+          "null": true
         }
       }
     ]
@@ -416,6 +437,14 @@
           "default": "None",
           "max_length": 255
         }
+      },
+      {
+        "field_name": "vanilla_trial",
+        "field_class": "BooleanField",
+        "options": {
+          "default": "None",          
+          "null": true
+        }
       }
     ]
   },
@@ -445,6 +474,30 @@
         "options": {
           "to": "Trial_Type",
           "null": false
+        }
+      },
+      {
+        "field_name": "excluded",
+        "field_class": "BooleanField",
+        "options": {
+          "default": "None",          
+          "null": true
+        }
+      },
+      {
+        "field_name": "exclusion_reason",
+        "field_class": "CharField",
+        "options": {
+          "null": true,
+          "default": "None",
+          "max_length": 255
+        }
+      },
+      {
+        "field_name": "aux_data",
+        "field_class": "JSONField",
+        "options": {          
+          "null": true
         }
       }
     ]
@@ -532,6 +585,13 @@
           "default": "None",
           "max_length": 255,
           "choices": [["image path", "image path"], ["experiment documentation", "experiment documentation"], ["Peekbank discretion", "Peekbank discretion"]]
+        }
+      },
+      {
+        "field_name": "aux_data",
+        "field_class": "JSONField",
+        "options": {          
+          "null": true
         }
       }
     ]
