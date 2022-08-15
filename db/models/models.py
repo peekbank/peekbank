@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import django
-from django.db.models import Model, CharField, ForeignKey, IntegerField, DateField, TextField, FloatField, BooleanField
+from django.db.models import CASCADE, Model, CharField, ForeignKey, IntegerField, JSONField, DateField, TextField, FloatField, BooleanField
 from django.conf import settings
 from datetime import datetime
 import json
@@ -13,7 +13,8 @@ field_classes = {
     "DateField": DateField,
     "TextField": TextField,
     "FloatField": FloatField,
-    "BooleanField": BooleanField
+    "BooleanField": BooleanField,
+    "JSONField": JSONField
 }
 
 def create_model(model_class, table, fields):
@@ -38,6 +39,7 @@ def create_model(model_class, table, fields):
         if field["field_class"] == "ForeignKey":
             #special case for foreign keys to avoid appending _id
             options['db_column'] = field_name
+            options['on_delete'] = CASCADE
         field_class_init = field_class(**options)
         attrs[field_name] = field_class_init
 
