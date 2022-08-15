@@ -5,6 +5,7 @@ import django
 from django.db.models import Avg, Count, Sum
 from django.db import reset_queries
 import pandas as pd
+import numpy as np
 import db.models
 from django.conf import settings
 from collections import defaultdict
@@ -39,7 +40,9 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
     else:
         print('Processing '+csv_path+'...')
         df = pd.read_csv(csv_path)
-        df = df.where((pd.notnull(df)), None) # replace nans with Nones
+        df = df.replace({np.nan:None})
+        
+        #print(df.iloc[0].to_dict('records'))
         rdict = {}
 
         for record in df.to_dict('records'):
@@ -75,8 +78,8 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
                             payload[fk_field] = dependencies[fk_to_table][record_default[fk_field] + offsets[fk_remap]]
                         except:
                             print('Foreign key indexing error! Go find Stephan')
-                            #import pdb
-                            #pdb.set_trace()
+                            import pdb
+                            pdb.set_trace()
                             raise ValueError('Foreign key indexing error! Go find Stephan')
 
                 else:
@@ -84,9 +87,13 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
                     if field['field_name'] in record_default:
                         #print('Populating '+dataset_type+'.'+field['field_name']+' normally...')
                         payload[field['field_name']] = record_default[field['field_name']]
+                    elif field['options']['null']:
+                    #    # if the schema allows for this field to be NA, and the column is missing in the input file, set to None
+                        #print(dataset_type+'.'+field['field_name']+' allows nulls...')
+                        payload[field['field_name']] = None
                     else:
-                        #import pdb
-                        #pdb.set_trace()
+                        import pdb
+                        pdb.set_trace()
                         raise ValueError('No value found for field '+field['field_name'])
 
             # Add the offset to the primary key
