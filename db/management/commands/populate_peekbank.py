@@ -87,14 +87,10 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
                     if field['field_name'] in record_default:
                         #print('Populating '+dataset_type+'.'+field['field_name']+' normally...')
                         payload[field['field_name']] = record_default[field['field_name']]
-                    elif field['options']['null']:
-                    #    # if the schema allows for this field to be NA, and the column is missing in the input file, set to None
-                        #print(dataset_type+'.'+field['field_name']+' allows nulls...')
-                        payload[field['field_name']] = None
                     else:
-                        import pdb
-                        pdb.set_trace()
-                        raise ValueError('No value found for field '+field['field_name'])
+                        #import pdb
+                        #pdb.set_trace()
+                        raise ValueError('No value found for field '+field['field_name']+". Make sure that this field is populated.")
 
             # Add the offset to the primary key
             payload[primary_key] += offsets[primary_key]

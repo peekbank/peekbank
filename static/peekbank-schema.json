@@ -445,7 +445,14 @@
           "default": "None",          
           "null": true
         }
-      }
+      },
+      {
+	 "field_name": "aux_data",
+	 "field_class": "JSONField",
+	 "options": {
+	   "null": true
+	 }
+      }								            
     ]
   },
   {
