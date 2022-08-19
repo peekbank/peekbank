@@ -444,7 +444,8 @@
         "options": {
           "default": "None",          
           "null": true
-        },
+        }
+      },
       {
         "field_name": "trial_type_aux_data",
         "field_class": "JSONField",
