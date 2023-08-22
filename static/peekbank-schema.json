@@ -172,7 +172,7 @@
         }
       },
       {
-        "field_name": "aux_data",
+        "field_name": "dataset_aux_data",
         "field_class": "JSONField",
         "options": {          
           "null": true
@@ -279,7 +279,7 @@
         }
       },
       {
-        "field_name": "aux_data",
+        "field_name": "administration_aux_data",
         "field_class": "JSONField",
         "options": {          
           "null": true
@@ -329,7 +329,7 @@
         }
       },
       {
-        "field_name": "aux_data",
+        "field_name": "subject_aux_data",
         "field_class": "JSONField",
         "options": {          
           "null": true
@@ -447,12 +447,12 @@
         }
       },
       {
-	 "field_name": "aux_data",
-	 "field_class": "JSONField",
-	 "options": {
-	   "null": true
-	 }
-      }								            
+        "field_name": "trial_type_aux_data",
+        "field_class": "JSONField",
+        "options": {          
+          "null": true
+        }
+      }
     ]
   },
   {
@@ -501,7 +501,7 @@
         }
       },
       {
-        "field_name": "aux_data",
+        "field_name": "trial_aux_data",
         "field_class": "JSONField",
         "options": {          
           "null": true
@@ -595,7 +595,7 @@
         }
       },
       {
-        "field_name": "aux_data",
+        "field_name": "stimulus_aux_data",
         "field_class": "JSONField",
         "options": {          
           "null": true

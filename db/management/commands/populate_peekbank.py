@@ -41,8 +41,7 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
         print('Processing '+csv_path+'...')
         df = pd.read_csv(csv_path)
         df = df.replace({np.nan:None})
-        
-        #print(df.iloc[0].to_dict('records'))
+
         rdict = {}
 
         for record in df.to_dict('records'):
@@ -83,14 +82,16 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
                             raise ValueError('Foreign key indexing error! Go find Stephan')
 
                 else:
-                    # check if is the table name
+                    # check if is the table name                    
                     if field['field_name'] in record_default:
                         #print('Populating '+dataset_type+'.'+field['field_name']+' normally...')
                         payload[field['field_name']] = record_default[field['field_name']]
-                    else:
-                        #import pdb
-                        #pdb.set_trace()
-                        raise ValueError('No value found for field '+field['field_name']+". Make sure that this field is populated.")
+                    # elif 'aux' in field['field_name'] and (field['field_name'] not in record_default):
+                    #     # if aux field is unspecified, populate it with None
+                    #     payload[field['field_name']] = None
+                    else:                    
+                        # if it's in one of the aux's, populate the field with None
+                        raise ValueError('No value found for field '+field['field_name']+". Make sure that this field is populated. Aborting processing this dataset.")
 
             # Add the offset to the primary key
             payload[primary_key] += offsets[primary_key]
