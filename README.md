@@ -37,7 +37,9 @@ When you want to update the database, you don't need to install anything new (i.
 
 1. Download the most recent version of all of the files from OSF with the Django command: `python3 manage.py download_osf --data_root ../peekbank_data_osf`
 
-1. `cd scripts` and run `./new_dev_db.sh.` This drops the existing database called `peekbank_dev` (if it exists), and creates a fresh one. Then it invokes Django migrations to enforce the correct schema, and invokes the Django populate command. This then runs a special Django management command that adds another table with the run length encoding. If a script whines about permissions, make sure it is executable with `chmod +x [filename]`.
+1. Right now there is a separate directory called `peekbank_data_testing` for adding a subset of datasets for testing (by copying them manually from `peekbank_data_osf`). The script in the next step looks at a folder called `peekbank_data`, which is either symlinked to the testing directory or to the output OSF directory (when you are ready to process all of the datasets). Change the symlink by deleting it with `rm` and then symlinking it with `ln -s <destination> <symlink name>`, e.g., `ln -s peekbank_data_osf peekbank_data` so that it runs all datasets OR `ln -s peekbank_data_testing peekbank_data` so that it only looks at the test datasets.
+   
+1. `cd scripts` and run `./new_dev_db.sh.` This drops the existing database called `peekbank_dev` (if it exists), and creates a fresh one. Then it invokes Django migrations to enforce the correct schema, and invokes the Django populate command on whatever is in the `peekbank_data` directory. This then runs a special Django management command that adds another table with the run length encoding. If a script whines about permissions, make sure it is executable with `chmod +x [filename]`.
 
 Unless this errors out, you should be able to see the new data in the `peekbank_dev` database when this process finishes.
 
