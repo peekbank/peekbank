@@ -7,8 +7,10 @@ from django.db import reset_queries
 import pandas as pd
 import numpy as np
 import db.models
+import traceback
 from django.conf import settings
 from collections import defaultdict
+from datetime import datetime
 
 def checkForPath(path):
     if os.path.exists(path):
@@ -24,7 +26,7 @@ def getDictsWithKeyForValue(dict_list, key, value):
             rv.append(item)
     return rv
 
-def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, dependencies=None, optional=False):
+def CSV_to_Django(validate_only, bulk_args, data_folder, schema, dataset_type, offsets, dependencies=None, optional=False):
 
     class_names = dict([(x['table'],x['model_class']) for x in schema])
     table_names = dict([(x['model_class'],x['table']) for x in schema])
@@ -87,6 +89,10 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
                     # cast any aux fields to JSON
                     if 'aux' in field['field_name'] and record_default[field['field_name']] is not None:
                         payload[field['field_name']] = json.loads(record_default[field['field_name']])
+                        
+                        if dataset_type == 'administrations':                                                        
+                            [validate_cdi_json(x) for x in payload[field['field_name']]]
+                            
 
                     # in most cases, just propagte the field
                     elif field['field_name'] in record_default:
@@ -103,7 +109,8 @@ def CSV_to_Django(bulk_args, data_folder, schema, dataset_type, offsets, depende
             data_model = getattr(db.models, class_names[dataset_type])
             rdict[payload[primary_key]] = data_model(**payload)
 
-        bulk_args.append((class_names[dataset_type], rdict))
+        if not validate_only:
+            bulk_args.append((class_names[dataset_type], rdict))
         return(rdict)
 
 def bulk_create_tables(bulk_args):
@@ -112,12 +119,15 @@ def bulk_create_tables(bulk_args):
 
 
 
-def create_data_tables(processed_data_folders, schema):
+def create_data_tables(processed_data_folders, schema, validate_only):
+
+    completion_reports = []
 
     for data_folder in processed_data_folders:
 
         # check if we need to process it
         dataset_name = pd.read_csv(os.path.join(data_folder, 'datasets.csv')).iloc[0].dataset_name
+        completion_report = {'dataset_name': dataset_name}
 
         dataset_model = getattr(db.models, 'Dataset')
         qs = dataset_model.objects.filter(dataset_name=dataset_name)
@@ -138,33 +148,108 @@ def create_data_tables(processed_data_folders, schema):
 
         bulk_args = []
 
+        # >>> TODO: put the code below in an iterator that whines about what went wrong and continues to run the other import tasks (both within dataset and across datasets)        
         try:
-            aoi_region_sets = CSV_to_Django(bulk_args, data_folder, schema, 'aoi_region_sets', offsets, optional=True)
-            datasets = CSV_to_Django(bulk_args, data_folder, schema, 'datasets', offsets)
-            subjects = CSV_to_Django(bulk_args, data_folder, schema, 'subjects', offsets, dependencies={'datasets':datasets})
-            administrations = CSV_to_Django(bulk_args, data_folder, schema, 'administrations', offsets, dependencies = {'subjects':subjects, 'datasets':datasets})
-            stimuli = CSV_to_Django(bulk_args, data_folder, schema, 'stimuli', offsets, dependencies = {'datasets':datasets})
-            trial_types = CSV_to_Django(bulk_args, data_folder, schema, 'trial_types', offsets, dependencies = {'datasets':datasets, 'aoi_region_sets':aoi_region_sets, 'stimuli':stimuli})
-            trials = CSV_to_Django(bulk_args, data_folder, schema, 'trials', offsets, dependencies = {'datasets':datasets, "aoi_region_sets": aoi_region_sets, 'stimuli':stimuli, 'trial_types':trial_types})
-            aoi_timepoints = CSV_to_Django(bulk_args, data_folder, schema, 'aoi_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations})
-            xy_timepoints = CSV_to_Django(bulk_args, data_folder, schema, 'xy_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations}, optional=True)
+            aoi_region_sets = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'aoi_region_sets', offsets, optional=True)
+            completion_report['aoi_region_sets'] = 'passed'
+        except Exception as e:
+            completion_report['aoi_region_sets'] = traceback.format_exc()
 
-        except ValueError as e:
-            print(e)
-            continue
+        try:
+            datasets = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'datasets', offsets)
+            completion_report['datasets'] = 'passed'
+        except Exception as e:
+            completion_report['datasets'] = traceback.format_exc()
 
-        else:
+        try:
+            subjects = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'subjects', offsets, dependencies={'datasets':datasets})
+            completion_report['subjects'] = 'passed'
+                    
+        except Exception as e:
+            completion_report['subjects'] = traceback.format_exc()
+        
+        try:
+            administrations = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'administrations', offsets, dependencies = {'subjects':subjects, 'datasets':datasets})            
+            completion_report['administrations'] = 'passed'
+
+        except Exception as e:
+            completion_report['administrations'] = traceback.format_exc()        
+
+        try:
+            stimuli = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'stimuli', offsets, dependencies = {'datasets':datasets})
+            completion_report['stimuli'] = 'passed'
+
+        except Exception as e:
+            completion_report['stimuli'] = traceback.format_exc()
+        
+        try:
+            trial_types = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'trial_types', offsets, dependencies = {'datasets':datasets, 'aoi_region_sets':aoi_region_sets, 'stimuli':stimuli})
+            completion_report['trial_types'] = 'passed'
+        except Exception as e:
+            completion_report['trial_types'] = traceback.format_exc()
+        
+        try:
+            trials = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'trials', offsets, dependencies = {'datasets':datasets, "aoi_region_sets": aoi_region_sets, 'stimuli':stimuli, 'trial_types':trial_types})
+            completion_report['trials'] = 'passed'
+        except Exception as e:
+            completion_report['trials'] = traceback.format_exc()
+        
+        try:
+            aoi_timepoints = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'aoi_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations})
+            completion_report['aoi_timepoints'] = 'passed'
+        except Exception as e:
+            completion_report['aoi_timepoints'] = traceback.format_exc()
+        
+        try:
+            xy_timepoints = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'xy_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations}, optional=True)
+            completion_report['xy_timepoints'] = 'passed'
+        except Exception as e:
+            completion_report['xy_timepoints'] = traceback.format_exc()
+        
+        if not validate_only:
             bulk_create_tables(bulk_args)
             reset_queries()
+        else:
+            print('Ran in validation mode, nothing written to the database.')
+        completion_reports.append(completion_report)
 
-def process_peekbank_dirs(data_root):
+    print('Generating a completion report...')
+    completion_df = pd.DataFrame(completion_reports)
+    if not os.path.exists('completion_reports'):
+        os.makedirs('completion_reports')
+    now = datetime.now()
+    current_date_time = now.strftime("%d-%m-%Y_%H_%M_%S")
+    completion_df.to_csv(os.path.join('completion_reports','completion_report_'+current_date_time+'.csv'))
+
+
+def process_peekbank_dirs(data_root, validate_only, dataset):
+    
     schema = json.load(open(settings.SCHEMA_FILE))
+    
+    if not os.path.exists(data_root):
+        raise ValueError('Path '+data_root+' does not exist. Make sure you are pointing to the correct directory.')
 
-    # FIXME: If data_root does not exist/is not accessible, this part silently fails. Do something else/warn the user instead!
-    all_dirs = [x[0] for x in os.walk(data_root)]
-    print(all_dirs)
+    if dataset is None:
+        all_dirs = [x[0] for x in os.walk(data_root)]
+    else:
+        single_dataset_path = os.path.join(data_root, dataset)
+        all_dirs = [x[0] for x in os.walk(single_dataset_path)]
+    
     processed_data_folders = [x for x in all_dirs if os.path.basename(x) == 'processed_data']
 
-    # FIXME: return `results` which can be evaluated for errors
-    create_data_tables(processed_data_folders, schema)
+    create_data_tables(processed_data_folders, schema, validate_only)
     print('Completed processing!')
+
+
+def validate_cdi_json(cdi_json):
+    print('Validating JSON')
+    # Written by Alvin Tan on 2/8/24
+    if 'cdi_responses' in cdi_json.keys():
+        for r in cdi_json['cdi_responses']:
+            assert len(set(['instrument_type', 'age', 'rawscore', 'language']).difference(set(r.keys()))) == 0
+            assert r['instrument_type'] in ['wgcomp', 'wgprod', 'wsprod']
+            assert isinstance(r['age'], (int, float))
+            assert isinstance(r['rawscore'], int)
+            if 'percentile' in r.keys():
+                assert isinstance(r['percentile'], (int, float))
+            assert isinstance(r['language'], str)
