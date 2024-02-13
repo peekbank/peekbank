@@ -44,18 +44,31 @@ def CSV_to_Django(validate_only, bulk_args, data_folder, schema, dataset_type, o
         df = pd.read_csv(csv_path)        
         df = df.replace({np.nan:None})
 
-        # need to make sure any JSON are cast as such here right here
+        # need to make sure any JSON are cast as such here right here        
 
-        rdict = {}
+        class_def = getDictsWithKeyForValue(schema, "model_class", class_names[dataset_type])[0]
+        primary_key = [x for x in class_def['fields'] if 'primary_key' in x['options']][0]['field_name']
+
+        fields_in_csv = df.columns
+        fields_required_by_schema = [x['field_name'] for x in class_def['fields']]
+
+        missing_fields = set(fields_required_by_schema)  - set(fields_in_csv) 
+        if len(missing_fields) > 0:
+            raise ValueError('Fields are missing from '+csv_path+': '+'; '.join(missing_fields)) 
+        
+        extra_fields = set(fields_in_csv) - set(fields_required_by_schema)
+        if len(extra_fields) > 0:
+            raise ValueError('Extra fields found in '+csv_path+': '+'; '.join(extra_fields)) 
+        rdict = {}        
 
         for record in df.to_dict('records'):
             record_default = defaultdict(None,record)
 
-            class_def = getDictsWithKeyForValue(schema, "model_class", class_names[dataset_type])[0]
-            primary_key = [x for x in class_def['fields'] if 'primary_key' in x['options']][0]['field_name']
+            
             payload = {}
 
-            for field in class_def['fields']:
+            for field in class_def['fields']:                
+
                 if field['field_class'] == 'ForeignKey':
                     #print('Populating '+dataset_type+'.'+field['field_name']+' as foreign key...')
                     # write the foreign key contents programatically
@@ -71,28 +84,24 @@ def CSV_to_Django(validate_only, bulk_args, data_folder, schema, dataset_type, o
                         # special case when a fk_to table does not exist, e.g. aoi_region_sets
                         payload[fk_field] = None
                     else:
-                        try:
-                            if fk_field in ('distractor_id', 'target_id'):
-                                # special case where the pk of the destination/to table is different than the local key (trials -> stimulis)
-                                fk_remap = "stimulus_id"
-                            else:
-                                fk_remap = fk_field
+                        if fk_field in ('distractor_id', 'target_id'):
+                            # special case where the pk of the destination/to table is different than the local key (trials -> stimulis)
+                            fk_remap = "stimulus_id"
+                        else:
+                            fk_remap = fk_field
 
-                            payload[fk_field] = dependencies[fk_to_table][record_default[fk_field] + offsets[fk_remap]]
-                        except:
-                            print('Foreign key indexing error! Go find Stephan')
-                            import pdb
-                            pdb.set_trace()
-                            raise ValueError('Foreign key indexing error! Go find Stephan')
+                        payload[fk_field] = dependencies[fk_to_table][record_default[fk_field] + offsets[fk_remap]]
+                        
 
-                else:
+                else:                    
+
                     # cast any aux fields to JSON
                     if 'aux' in field['field_name'] and record_default[field['field_name']] is not None:
+                        
                         payload[field['field_name']] = json.loads(record_default[field['field_name']])
                         
-                        if dataset_type == 'administrations':                                                        
-                            [validate_cdi_json(x) for x in payload[field['field_name']]]
-                            
+                        if dataset_type in ('administrations', 'subjects'):                            
+                            validate_aux_data( payload[field['field_name']])                        
 
                     # in most cases, just propagte the field
                     elif field['field_name'] in record_default:
@@ -125,10 +134,29 @@ def create_data_tables(processed_data_folders, schema, validate_only):
 
     for data_folder in processed_data_folders:
 
+        completion_report = {} 
         # check if we need to process it
-        dataset_name = pd.read_csv(os.path.join(data_folder, 'datasets.csv')).iloc[0].dataset_name
-        completion_report = {'dataset_name': dataset_name}
+        dataset_df = pd.read_csv(os.path.join(data_folder, 'datasets.csv'))
+        if not 'dataset_name' in  dataset_df.columns:
+            # bail! We cannot do anything without this
+            completion_report = {'dataset_name': 'No dataset name: '+data_folder}
+            completion_report['aoi_region_sets'] = 'Cannot evaluate'
+            completion_report['subjects'] = 'Cannot evaluate'
+            completion_report['datasets'] = 'Cannot evaluate'
+            completion_report['administrations'] = 'Cannot evaluate'
+            completion_report['stimuli'] = 'Cannot evaluate'
+            completion_report['trial_types'] = 'Cannot evaluate'
+            completion_report['trials'] = 'Cannot evaluate'
+            completion_report['aoi_timepoints'] = 'Cannot evaluate'
+            completion_report['xy_timepoints'] = 'Cannot evaluate'
 
+            completion_reports.append(completion_report)
+            continue
+                     
+        else:
+            dataset_name = dataset_df.iloc[0].dataset_name
+            completion_report['dataset_name'] =  dataset_name
+        
         dataset_model = getattr(db.models, 'Dataset')
         qs = dataset_model.objects.filter(dataset_name=dataset_name)
         if len(qs) > 0:
@@ -152,32 +180,67 @@ def create_data_tables(processed_data_folders, schema, validate_only):
         try:
             aoi_region_sets = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'aoi_region_sets', offsets, optional=True)
             completion_report['aoi_region_sets'] = 'passed'
+            if aoi_region_sets is not None:
+                completion_report['num_records_aoi_region_sets'] = len(aoi_region_sets)
+            else: 
+                completion_report['num_records_aoi_region_sets'] = 0
+
         except Exception as e:
             completion_report['aoi_region_sets'] = traceback.format_exc()
+            completion_report['num_records_aoi_region_sets'] = 'Cannot evaluate'
 
         try:
             datasets = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'datasets', offsets)
             completion_report['datasets'] = 'passed'
+
+            if datasets is not None:
+                completion_report['num_records_datasets'] = len(datasets)
+            else: 
+                completion_report['num_records_datasets'] = 0
+
         except Exception as e:
             completion_report['datasets'] = traceback.format_exc()
+            completion_report['num_records_datasets'] = 'Cannot evaluate'
+
 
         try:
             subjects = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'subjects', offsets, dependencies={'datasets':datasets})
             completion_report['subjects'] = 'passed'
+            if subjects is not None:
+                completion_report['num_records_subjects'] = len(subjects)
+            else: 
+                completion_report['num_records_subjects'] = 0
+
+            
+            completion_report['num_subjects_with_cdis'] = len(['cdi_responses' in x.subject_aux_data[0] for x in subjects.values() if x.subject_aux_data is not None])
                     
         except Exception as e:
             completion_report['subjects'] = traceback.format_exc()
+            completion_report['num_records_subjects'] = 'Cannot evaluate'
         
         try:
             administrations = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'administrations', offsets, dependencies = {'subjects':subjects, 'datasets':datasets})            
             completion_report['administrations'] = 'passed'
+            if administrations is not None:
+                completion_report['num_records_administrations'] = len(administrations)
+            else: 
+                completion_report['num_records_administrations'] = 0                
+                    
+            completion_report['num_admins_with_cdis'] = len(['cdi_responses' in x.administration_aux_data[0] for x in administrations.values() if x.administration_aux_data is not None])
+
 
         except Exception as e:
             completion_report['administrations'] = traceback.format_exc()        
+            completion_report['num_records_administrations'] = 'Cannot evaluate'
 
         try:
             stimuli = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'stimuli', offsets, dependencies = {'datasets':datasets})
             completion_report['stimuli'] = 'passed'
+            if stimuli is not None:
+                completion_report['num_records_stimuli'] = len(stimuli)
+            else: 
+                completion_report['num_records_stimuli'] = 0
+                completion_report['num_records_stimuli'] = 'Cannot evaluate'
 
         except Exception as e:
             completion_report['stimuli'] = traceback.format_exc()
@@ -185,40 +248,66 @@ def create_data_tables(processed_data_folders, schema, validate_only):
         try:
             trial_types = CSV_to_Django(validate_only, bulk_args, data_folder, schema, 'trial_types', offsets, dependencies = {'datasets':datasets, 'aoi_region_sets':aoi_region_sets, 'stimuli':stimuli})
             completion_report['trial_types'] = 'passed'
+            if trial_types is not None:
+                completion_report['num_records_trial_types'] = len(trial_types)
+            else: 
+                completion_report['num_records_trial_types'] = 0
         except Exception as e:
             completion_report['trial_types'] = traceback.format_exc()
+            completion_report['num_records_trial_types'] = 'Cannot evaluate'
         
         try:
             trials = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'trials', offsets, dependencies = {'datasets':datasets, "aoi_region_sets": aoi_region_sets, 'stimuli':stimuli, 'trial_types':trial_types})
             completion_report['trials'] = 'passed'
+            if trials is not None:
+                completion_report['num_records_trials'] = len(trials)
+            else: 
+                completion_report['num_records_trials'] = 0
+
         except Exception as e:
             completion_report['trials'] = traceback.format_exc()
+            completion_report['num_records_trials'] = 'Cannot evaluate'
         
         try:
             aoi_timepoints = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'aoi_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations})
             completion_report['aoi_timepoints'] = 'passed'
+            if aoi_timepoints is not None:
+                completion_report['num_records_aoi_timepoints'] = len(aoi_timepoints)
+            else: 
+                completion_report['num_records_aoi_timepoints'] = 0
+
         except Exception as e:
             completion_report['aoi_timepoints'] = traceback.format_exc()
+            completion_report['num_records_aoi_timepoints'] = 'Cannot evaluate'
         
         try:
             xy_timepoints = CSV_to_Django(validate_only,bulk_args, data_folder, schema, 'xy_timepoints', offsets, dependencies = {'subjects':subjects, 'trials':trials, 'administrations': administrations}, optional=True)
             completion_report['xy_timepoints'] = 'passed'
+            if xy_timepoints is not None:
+                completion_report['num_records_xy_timepoints'] = len(xy_timepoints)
+            else: 
+                completion_report['num_records_xy_timepoints'] = 0
+
         except Exception as e:
             completion_report['xy_timepoints'] = traceback.format_exc()
+            completion_report['num_records_xy_timepoints'] = 'Cannot evaluate'
         
         if not validate_only:
             bulk_create_tables(bulk_args)
             reset_queries()
         else:
             print('Ran in validation mode, nothing written to the database.')
+
         completion_reports.append(completion_report)
+
+
 
     print('Generating a completion report...')
     completion_df = pd.DataFrame(completion_reports)
     if not os.path.exists('completion_reports'):
         os.makedirs('completion_reports')
     now = datetime.now()
-    current_date_time = now.strftime("%d-%m-%Y_%H_%M_%S")
+    current_date_time = now.strftime("%Y-%m-%d-_%H_%M_%S")
     completion_df.to_csv(os.path.join('completion_reports','completion_report_'+current_date_time+'.csv'))
 
 
@@ -236,16 +325,19 @@ def process_peekbank_dirs(data_root, validate_only, dataset):
         all_dirs = [x[0] for x in os.walk(single_dataset_path)]
     
     processed_data_folders = [x for x in all_dirs if os.path.basename(x) == 'processed_data']
+    if len(processed_data_folders) == 0:
+        import pdb
+        pdb.set_trace()
+        raise ValueError('No folders with processed data found. Do you have the right path?')    
 
     create_data_tables(processed_data_folders, schema, validate_only)
     print('Completed processing!')
 
 
-def validate_cdi_json(cdi_json):
-    print('Validating JSON')
+def validate_aux_data(aux_json):
     # Written by Alvin Tan on 2/8/24
-    if 'cdi_responses' in cdi_json.keys():
-        for r in cdi_json['cdi_responses']:
+    if 'cdi_responses' in aux_json.keys():        
+        for r in aux_json['cdi_responses']:            
             assert len(set(['instrument_type', 'age', 'rawscore', 'language']).difference(set(r.keys()))) == 0
             assert r['instrument_type'] in ['wgcomp', 'wgprod', 'wsprod']
             assert isinstance(r['age'], (int, float))
@@ -253,3 +345,10 @@ def validate_cdi_json(cdi_json):
             if 'percentile' in r.keys():
                 assert isinstance(r['percentile'], (int, float))
             assert isinstance(r['language'], str)
+    else:
+        raise ValueError('Other JSON fields found: '+' '.join(aux_json.keys()))
+
+
+
+
+        
