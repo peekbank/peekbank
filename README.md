@@ -54,3 +54,17 @@ The `peekbank` application uses a JSON-specified representation of the schema, i
 1) by the `peekds` file readers, in order to parse and validate input files
 2) by `models.py` in Django to establish the data model (i.e., Django object relational model) and to define migrations
 3) by `populate_peekbank2.py` to populate the fields from CSVs output by peekds 
+
+# Validation Mode
+
+The ingestion pipeline can also be used to check that data meets the requirements specified in the schema (without writing anything to the database) using the `--valdiate_only` flag. This is useful for checking the compliance of all datasets:
+
+`python3 -m pdb -c c manage.py populate_db --data_root /home/ubuntu/peekbank_data --validate_only`
+
+# Specifying a single dataset
+
+The ingestion pipeline can be run on a single datset using the `--dataset` flag:
+
+`python3 -m pdb -c c manage.py populate_db --data_root /home/ubuntu/peekbank_data --dataset swingley_aslin_2002`
+
+
