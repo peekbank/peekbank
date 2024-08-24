@@ -10,12 +10,16 @@ from pprint import pprint
 from django.conf import settings
 from pdb import set_trace as st
 
+from dotenv import load_dotenv
+
 
 # TODO: Add error handling
 # TODO: Multiprocessing?
 # TODO: Fix the awful directory/paths (replace with tempdir/files?)
 # TODO: Add tqdm for progress
 # TODO: Graceful interrupt handling
+
+load_dotenv()
 
 # Visit this url to see what the json response will look like.
 BASE_OSF_URL = 'https://api.osf.io/v2/nodes/pr6wu/files/osfstorage/'
@@ -85,6 +89,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         data_root = options.get('data_root')
+        if not data_root:
+            data_root = os.environ['OSF_DATA_PATH']
+
         print('Called download_osf with data_root '+data_root)
 
         try:

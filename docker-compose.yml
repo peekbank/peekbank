@@ -1,0 +1,27 @@
+services:
+  peekbank-db:
+    image: mariadb:10.6
+    container_name: peekbank-db
+    environment:
+    - MARIADB_USER=${PEEKBANK_DB_USER}
+    - MARIADB_PASSWORD=${PEEKBANK_DB_PASSWORD}
+    - MARIADB_DATABASE=${PEEKBANK_DB_NAME}
+    - MARIADB_ROOT_PASSWORD=${PEEKBANK_DB_ROOTPW}
+    command: --lower_case_table_names=1
+    ports:
+      - 127.0.0.1:${PEEKBANK_DB_PORT}:3306
+    volumes:
+      - ./db-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+  
+  peekbank-django:
+    container_name: peekbank-django
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./${PEEKBANK_DATA_PATH}:/srv/peekbank/${PEEKBANK_DATA_PATH}

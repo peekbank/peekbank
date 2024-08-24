@@ -11,33 +11,39 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-import json
+#import json
+from dotenv import load_dotenv
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+load_dotenv()
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-with open(os.path.join(BASE_DIR, 'config.json')) as json_config_file:
-    config = json.load(json_config_file)
+#with open(os.path.join(BASE_DIR, 'config.json')) as json_config_file:
+#    config = json.load(json_config_file)
 
-PEEKBANK_DB_HOST = config['peekbank-mysql']['PEEKBANK_DB_HOST']
-PEEKBANK_DB_NAME = config['peekbank-mysql']['PEEKBANK_DB_NAME']
-PEEKBANK_DB_USER = config['peekbank-mysql']['PEEKBANK_DB_USER']
-PEEKBANK_DB_PASSWORD = config['peekbank-mysql']['PEEKBANK_DB_PASSWORD']
-PEEKBANK_DB_PORT = config['peekbank-mysql']['PEEKBANK_DB_PORT']
+#PEEKBANK_DB_HOST = config['peekbank-mysql']['PEEKBANK_DB_HOST']
+#PEEKBANK_DB_NAME = config['peekbank-mysql']['PEEKBANK_DB_NAME']
+#PEEKBANK_DB_USER = config['peekbank-mysql']['PEEKBANK_DB_USER']
+#PEEKBANK_DB_PASSWORD = config['peekbank-mysql']['PEEKBANK_DB_PASSWORD']
+#PEEKBANK_DB_PORT = config['peekbank-mysql']['PEEKBANK_DB_PORT']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config['SECRET_KEY']
+#SECRET_KEY = config['SECRET_KEY']
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+PEEKBANK_DB_HOST = os.environ['PEEKBANK_DB_HOST']
+PEEKBANK_DB_NAME = os.environ['PEEKBANK_DB_NAME']
+PEEKBANK_DB_USER = os.environ['PEEKBANK_DB_USER']
+PEEKBANK_DB_PASSWORD = os.environ['PEEKBANK_DB_PASSWORD']
+PEEKBANK_DB_PORT = os.environ['PEEKBANK_DB_PORT']
+SECRET_KEY = os.environ['SECRET_KEY']
+DEBUG = os.environ['DEBUG'] == "TRUE"
+
 
 ALLOWED_HOSTS = []
 
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -47,9 +53,8 @@ INSTALLED_APPS = [
     #'django.contrib.sessions',
     'django.contrib.messages',
     #'django.contrib.staticfiles',
+    'django_extensions'
 ]
-
-INSTALLED_APPS += ['django_extensions']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

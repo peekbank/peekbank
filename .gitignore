@@ -4,8 +4,11 @@
 ._*
 *.pyc
 config.json
+.env
 *env/
 data/
+db-data/
+peekbank-data/
 
 
 # Vim
