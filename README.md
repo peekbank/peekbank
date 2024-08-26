@@ -1,6 +1,5 @@
 # TODOs for this version
-* report is not saved currently
-* fix the validation
+* fix permission setting for dev and prod db
 * introduce a process to get a subset of data automatically (got deleted in the last calamity)
 * test/fix promoting
 * describe development db access with external tools
