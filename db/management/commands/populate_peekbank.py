@@ -212,7 +212,7 @@ def create_data_tables(processed_data_folders, schema, validate_only):
                 completion_report['num_records_subjects'] = 0
 
             
-            completion_report['num_subjects_with_cdis'] = len(['cdi_responses' in x.subject_aux_data[0] for x in subjects.values() if x.subject_aux_data is not None])
+            completion_report['num_subjects_with_cdis'] = len(['cdi_responses' in x.subject_aux_data for x in subjects.values() if x.subject_aux_data is not None])
                     
         except Exception as e:
             completion_report['subjects'] = traceback.format_exc()
@@ -335,18 +335,23 @@ def process_peekbank_dirs(data_root, validate_only, dataset):
 
 
 def validate_aux_data(aux_json):
-    # Written by Alvin Tan on 2/8/24
-    if 'cdi_responses' in aux_json.keys():        
+
+    # maybe rethink this coupeling in the future (move this so a schema so that the R validator already captures it)
+    allowed_aux_data_properties = ['cdi_responses', 'lang_measures', 'lang_exposures', 'full_phrase_language_non_iso', 'native_language_non_iso', 'lab_visit_num']
+    extra_keys = set(aux_json.keys()) - set(allowed_aux_data_properties)
+
+    if len(extra_keys) > 0:
+        raise ValueError('Other JSON fields found: '+' '.join(extra_keys))
+
+    if 'cdi_responses' in aux_json.keys():      
         for r in aux_json['cdi_responses']:            
             assert len(set(['instrument_type', 'age', 'rawscore', 'language']).difference(set(r.keys()))) == 0
-            assert r['instrument_type'] in ['wgcomp', 'wgprod', 'wsprod']
+            assert r['instrument_type'] in ['wg', 'ws', 'wsshort']
             assert isinstance(r['age'], (int, float))
             assert isinstance(r['rawscore'], int)
             if 'percentile' in r.keys():
                 assert isinstance(r['percentile'], (int, float))
             assert isinstance(r['language'], str)
-    else:
-        raise ValueError('Other JSON fields found: '+' '.join(aux_json.keys()))
 
 
 
