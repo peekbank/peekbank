@@ -17,7 +17,7 @@ some hints. Modify according to your environment.
 
 1. Get the `config.json` file with database credentials and place them in the root of this repo. This includes Django settings and passwords and is not part of the repo because it has passwords etc.
 
-1. Set up a virtual environment; by convention `peekbank-env`: `virtualenv peekbank-env -p python3`
+1. Set up a virtual environment; by convention `peekbank-env`: `virtualenv peekbank-env -p python3.9`
 
 1. Change python3 to a specific path if you want to use a specific Python installation. Then activate the venv: `source peekbank-env/bin/activate`
 
