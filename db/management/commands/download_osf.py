@@ -30,7 +30,7 @@ class Command(BaseCommand):
 
     def gather_folders(self):
         print('Gathering folders....')
-        payload = {'filter[kind]': 'folder'}
+        payload = {}
         folders = []
         current_link = self.collect_page(BASE_OSF_URL, payload, folders)
         while(current_link != None):
