@@ -18,6 +18,7 @@ class Command(BaseCommand):
              row_number() over (partition by administration_id, trial_id, aoi order by t_norm)
             ) as grp
     from aoi_timepoints;
+    CREATE INDEX idx_administration_trial_aoi_grp ON aoi_timepoints_indexed (administration_id, trial_id, aoi, grp);
     create table aoi_timepoints_rle as
     select administration_id, trial_id, min(t_norm) as t_norm, aoi, count(*) as length
     from aoi_timepoints_indexed
