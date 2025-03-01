@@ -6,26 +6,30 @@ This repository contains a Django app that populates the peekbank database. A fe
 
 # Setting Up a New Server From Scratch
 
-Follow these directions if you are setting up a new server (e.g., a new EC2 box) from scratch. Otherwise, jump down to "Update the Dev Database" for instructions on how to get into an existing installation and update the database with a newer version of the data. We provide the instructions here for setting up a new server because one might want to add this to an existing server (e.g., an image with Shiny on it) because the MySQL requirements are quite simple by comparison.
+Follow these directions if you are setting up a new server (e.g., a new EC2 box) from scratch. Otherwise, jump down to "Update the Dev Database" for instructions on how to get into an existing installation and update the database with a newer version of the data. We provide the instructions here for setting up a new server because one might want to add this to an existing server (e.g., an image with Shiny on it) because the MySQL requirements are quite simple by comparison. You'll need a `config.json` file that's not checked into the github repo for security reasons.
 
-1. First, SSH onto the server. 
-1. Make sure that you have mysql server installed. For a debian based OS, this is most likely as simple as running `sudo apt install mysql-server`. 
-However, you will also need to figure out user accounts in the database with appropriate privileges. The `config.json` should give you 
-some hints. Modify according to your environment.
+1. First, SSH into the server. 
+1. Make sure that you have mysql server and client installed. For a debian based OS (e.g. Ubuntu), this is most likely as simple as running `sudo apt update` and `sudo apt install mysql-server libmysqlclient-dev`.
 
-1. Clone this repo into the user folder
+1. Assign the root user the password in `config.json` as `PEEKBANK_DB_PASSWORD`:
+`ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY $ROOT_PASS; FLUSH PRIVILEGES;`
+Additionally, add the following line to the end of `~/.profile`, with the password as the string: `ROOT_PASS=""`
 
-1. Get the `config.json` file with database credentials and place them in the root of this repo. This includes Django settings and passwords and is not part of the repo because it has passwords etc.
+1. There may be other system requirements -- as of 2025-02-28, the server runs Ubuntu 24.04, the environment uses Python 3.12.3, and the other system requirements can be installed with: `sudo apt install pkg-config python3 python3-virtualenv python3-pip`).
 
-1. Set up a virtual environment; by convention `peekbank-env`: `virtualenv peekbank-env -p python3.9`
+1. Clone this repo into the user folder: `git clone https://github.com/peekbank/peekbank.git`
 
-1. Change python3 to a specific path if you want to use a specific Python installation. Then activate the venv: `source peekbank-env/bin/activate`
+1. Place the `config.json` file with database credentials in the root of this repo.
+
+1. Set up a virtual environment; by convention `peekbank-env`: `virtualenv peekbank-env -p python3` (change python3 if you want to use a different Python version/installation that your system default).
+
+1. Then activate the venv: `source peekbank-env/bin/activate`
 
 1. And you should see the venv name in your shell (peekbank-env). Then install the requirements to the venv: `pip3 install -r requirements.txt`
 
-At this step, if you get an error related to missing `mysql_config` file, make sure that you install the package `libmysqlclient-dev` with `sudo apt install libmysqlclient-dev` (or something similar depending on your OS)
-
 This server should be ready to run MySQL, so try updating the dev database as below!
+
+To migrate existing databases on a previous server to the new one, run `scripts/migrate_dbs.sh` and `scripts/mount_dbs.sh` (this will create copies of all of the databases that are listed as "supported" in [this file](https://github.com/peekbank/peekbank-website/blob/master/peekbank.json)).
 
 # Update the Dev Database
 
@@ -39,7 +43,7 @@ When you want to update the database, you don't need to install anything new (i.
 
 1. Right now there is a separate directory called `peekbank_data_testing` for adding a subset of datasets for testing (by copying them manually from `peekbank_data_osf`). The script in the next step looks at a folder called `peekbank_data`, which is either symlinked to the testing directory or to the output OSF directory (when you are ready to process all of the datasets). Change the symlink by deleting it with `rm` and then symlinking it with `ln -s <destination> <symlink name>`, e.g., `ln -s peekbank_data_osf peekbank_data` so that it runs all datasets OR `ln -s peekbank_data_testing peekbank_data` so that it only looks at the test datasets.
    
-1. `cd scripts` and run `./new_dev_db.sh.` This drops the existing database called `peekbank_dev` (if it exists), and creates a fresh one. Then it invokes Django migrations to enforce the correct schema, and invokes the Django populate command on whatever is in the `peekbank_data` directory. This then runs a special Django management command that adds another table with the run length encoding. If a script whines about permissions, make sure it is executable with `chmod +x [filename]`.
+1. `cd scripts` and run `./new_dev_db.sh` This drops the existing database called `peekbank_dev` (if it exists), and creates a fresh one. Then it invokes Django migrations to enforce the correct schema, and invokes the Django populate command on whatever is in the `peekbank_data` directory. This then runs a special Django management command that adds another table with the run length encoding. If a script whines about permissions, make sure it is executable with `chmod +x [filename]`.
 
 Unless this errors out, you should be able to see the new data in the `peekbank_dev` database when this process finishes.
 
