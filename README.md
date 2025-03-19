@@ -15,7 +15,7 @@ This repository contains a Django app that populates the peekbank database. A fe
 
 # Setup
 
-For a more streamlined deployment and developer experience, you can use peekbank via [Docker](https://docs.docker.com/engine/install/), so install it.
+For a more streamlined deployment and developer experience, you can use peekbank via [Docker](https://docs.docker.com/engine/install/), so install it. 
 
 After cloning the repo, create an `.env` file with the following command:
 
@@ -28,17 +28,22 @@ and fill it in according to the instructions.
 
 # Development
 
+You will also need an installation of Python 3.12 or higher (include link here once this becomes the main guide/version)
 
 To start the local develeopment database via docker, run 
 ```
-./run-local-dn.sh
+./run-local-db.sh
 ```
 in the projects root.
 
 Next, set up the virtual environment:
 
 ```
-virtualenv peekbank-env -p python3
+pip3 install virtualenv
+```
+
+```
+virtualenv peekbank-env -p python3.12
 ```
 
 Activate it: 
