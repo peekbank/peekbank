@@ -354,7 +354,7 @@ def validate_aux_data(aux_json):
     if 'cdi_responses' in aux_json.keys():      
         for r in aux_json['cdi_responses']:            
             assert len(set(['instrument_type', 'age', 'rawscore', 'language']).difference(set(r.keys()))) == 0
-            assert r['instrument_type'] in ['wg', 'ws', 'wsshort']
+            assert r['instrument_type'] in ['wg', 'ws', 'wsshort', 'wgshort']
             assert isinstance(r['age'], (int, float))
             assert isinstance(r['rawscore'], int)
             if 'percentile' in r.keys():
