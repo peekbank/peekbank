@@ -360,4 +360,3 @@ def validate_aux_data(aux_json):
             if 'percentile' in r.keys():
                 assert isinstance(r['percentile'], (int, float))
             assert isinstance(r['language'], str)
-        
