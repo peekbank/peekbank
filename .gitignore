@@ -11,6 +11,7 @@ db-data/
 peekbank-data/
 
 .env
+.env.prod
 db-data/
 peekbank-data/
 

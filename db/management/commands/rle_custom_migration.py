@@ -1,15 +1,13 @@
-import os
-from django.conf import settings
 from django.core.management import BaseCommand
 from django.db import connection
 
 
 class Command(BaseCommand):
-
-    def my_custom_sql(self):
+    def handle(self, *args, **options):
+        print("Applying RLE...")
         with connection.cursor() as cursor:
             cursor.execute(
-            """
+                """
     DROP TABLE IF EXISTS aoi_timepoints_indexed;
     DROP TABLE IF EXISTS aoi_timepoints_rle;
     create table aoi_timepoints_indexed as
@@ -25,10 +23,4 @@ class Command(BaseCommand):
     group by administration_id, trial_id, aoi, grp
     order by administration_id, trial_id, t_norm;
                     """
-                    )
-
-    def handle(self, *args, **options):
-        self.my_custom_sql()
-
-
-
+            )

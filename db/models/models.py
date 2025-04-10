@@ -19,7 +19,7 @@ field_classes = {
 
 def create_model(model_class, table, fields):
 
-    print('Creating model for class ' + model_class)
+    #print('Creating model for class ' + model_class)
     class Meta:
         app_label = 'db'
         db_table = table

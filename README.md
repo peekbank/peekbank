@@ -1,21 +1,21 @@
-# TODOs for this version
-* fix permission setting for dev and prod db
-* introduce a process to get a subset of data automatically (got deleted in the last calamity)
-* test/fix promoting
-* describe development db access with external tools
-* clean up documentation
-* Migrate the main server to this version
-
 # Peekbank
 
-This repository contains a Django app that populates the peekbank database. A few notes:
-- We use Django to enforce the database schema, build an object-relational model and then populate the database
-- The workflows below involve pushing data to the `peekbank_dev` database, then copying that to named releases that will otherwise remain unchanged. `peekbank_dev` may change at any time
+This repository contains the containerized Peekbank database and the Django app that populates the db from the OSF data. This repo is relevant to you if you want to make changes to Peekbank or want to run a local version of it. If you just want to use the Peekbank data for analyses, either use our dedicated [peekbankr](https://github.com/peekbank/peekbankr) R package or connect directly to our hosted SQL database using the read-only access account:
 
+```
+Hostname: 34.210.173.143
+Port: 3306
+Adapter: MariaDB
+Database: 2025.1 (or any of the supported versions)
+Username: reader
+Password: gazeofracoons
+```
 
-# Setup
+[Supported versions of the PB database](https://peekbank.github.io/peekbank-website/peekbank.json)
 
-For a more streamlined deployment and developer experience, you can use peekbank via [Docker](https://docs.docker.com/engine/install/), so install it. 
+# General Setup for both Development and Deployment
+
+For a more streamlined development and deployment experience, we use [Docker](https://docs.docker.com/engine/install/). Install the latest version for your operating system (Docker Desktop for local running/development and regular Docker for server deployments).
 
 After cloning the repo, create an `.env` file with the following command:
 
@@ -23,18 +23,48 @@ After cloning the repo, create an `.env` file with the following command:
 cp .env.template .env
 ```
 
-and fill it in according to the instructions.
+and fill it in according to the instructions in the file.
 
+When working with the database, it might be useful to have a tool to view the contents. We reccomend [DBeaver](https://dbeaver.io/download/)
+
+# Deployment
+
+
+To start up peekbank, run this command in the projects repository 
+
+```
+docker compose up -d
+```
+
+The first time this command runs, it will take some time as the necessary containers will be built/pulled.
+After the command concludes, the Peekbank container is ready and the database container should be running in the background.
+The database will be accessible on your host machine on the port that was specified in the `.env` (3306 by default, so YOUR_IP_HERE:3306 will expose a MariaDB connection).
+
+If you ever need to stop the database, run:
+```
+docker compose down
+```
+
+When updating peekbank, run the following commands in the projects root:
+
+```
+git pull
+docker compose build
+docker compose up -d
+```
 
 # Development
 
-You will also need an installation of Python 3.12 or higher (include link here once this becomes the main guide/version)
+You can use the docker commands from the [deployment section](#deployment) to build and run the peekbank container locally when testing simple changes.
 
-To start the local develeopment database via docker, run 
+For a faster development experience, it makes sense to use docker for the database and use a local python environment to run the Django app. For this, you will need an installation of [Python 3.12](https://www.python.org/downloads/release/python-3120/).
+
+Start the local develeopment database via docker by running
 ```
 ./run-local-db.sh
 ```
-in the projects root.
+in the projects root. The MariaDB database will now be accessible on the port you specified in `.env` (3306 default).
+
 
 Next, set up the virtual environment:
 
@@ -58,30 +88,16 @@ pip3 install -r requirements.txt
 ```
 
 
-# Deployment (Setting Up a New Server From Scratch)
+# Usage
 
-(TODO for both: how is the db connected to the outside world? There seems to be an undocumented link)
+## Entering Peekbank
 
-## With Docker:
+Before you can use Peekbank commands to populate and update the database, you will need to "enter" the Peekbank's environment. The method differs based on your setup:
 
-In the repos root, run 
-
-```
-docker compose up -d
-```
-
-The first time this command runs, this will take some time.
-After the command concludes, the database container should be running in the background and the peekbank container is ready.
-If you ever need to stop the database, run:
-```
-docker compose down
-```
-
-
-To enter the peekbank container and use peekbank commands, use:
+### Deployment (DB in Docker, Django App in Docker)
 
 ```
-enter-peekbank-container.sh
+enter-peekbank.sh
 ```
 
 You can exit the container by running
@@ -89,104 +105,49 @@ You can exit the container by running
 exit
 ```
 
-When updating peekbank, run the following commands after pulling:
+### Development (DB in Docker, Django App in Python Enviroment)
 
 ```
-docker compose build
-docker compose up -d
+source peekbank-env/bin/activate
 ```
 
-### Migrating the current setup to this docker setup
+You can exit the virtual env by running
+```
+deactivate
+```
 
-#### Using the preinstalled server with this repo
+## Importing Data from an existing Peekbank
+TODO
+### Remote
+TODO
+### Using SQL dumps
+TODO
+## Getting Data into the Staging Database
+TODO
 
-1. Collect the data from the config.json and .profile (rootpw for db here) and put them into the .env file on the server
-2. Input the database hostname/credentials into the .env file so that the bash scripts target it correctly
-3. The peekbank download data has been moved inside the peekbank folder by default - check if this causes problems with other things installed on the box
+### Pulling Data from OSF
 
-#### Fully switching over
-
-1. Install docker on the machine
-2. Move the data from the currently used MySQL data to the MariaDB container
-3. Expose the DB container to the outside of the machine (either change the dockerfile in the repo, or use a reverse proxy etc.)
-
-
-## Without Docker:
-
-Follow these directions if you are setting up a new server (e.g., a new EC2 box) from scratch. Otherwise, jump down to "Update the Dev Database" for instructions on how to get into an existing installation and update the database with a newer version of the data. We provide the instructions here for setting up a new server because one might want to add this to an existing server (e.g., an image with Shiny on it) because the MySQL requirements are quite simple by comparison. You'll need a `config.json` file that's not checked into the github repo for security reasons.
-
-1. First, SSH into the server. 
-1. Make sure that you have mysql server and client installed. For a debian based OS (e.g. Ubuntu), this is most likely as simple as running `sudo apt update` and `sudo apt install mysql-server libmysqlclient-dev`.
-
-1. Assign the root user the password in `config.json` as `PEEKBANK_DB_PASSWORD`:
-`ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY $ROOT_PASS; FLUSH PRIVILEGES;`
-Additionally, add the following line to the end of `~/.profile`, with the password as the string: `ROOT_PASS=""`
-
-
-1. There may be other system requirements -- as of 2025-02-28, the server runs Ubuntu 24.04, the environment uses Python 3.12.3, and the other system requirements can be installed with: `sudo apt install pkg-config python3 python3-virtualenv python3-pip`).
-
-1. Clone this repo into the user folder: `git clone https://github.com/peekbank/peekbank.git`
-
-1. Place the `config.json` file with database credentials in the root of this repo.
-
-1. Set up a virtual environment; by convention `peekbank-env`: `virtualenv peekbank-env -p python3` (change python3 if you want to use a different Python version/installation that your system default).
-
-1. Then activate the venv: `source peekbank-env/bin/activate`
-
-1. And you should see the venv name in your shell (peekbank-env). Then install the requirements to the venv: `pip3 install -r requirements.txt`
-
-This server should be ready to run MySQL, so try updating the dev database as below!
-
-
-In order to run peekbank commands, you now need to
-
-1. `cd peekbank` to enter the peekbank folder
-
-1. Activate the virtual environment: `source peekbank-env/bin/activate`
-
-To migrate existing databases on a previous server to the new one, run `scripts/migrate_dbs.sh` and `scripts/mount_dbs.sh` (this will create copies of all of the databases that are listed as "supported" in [this file](https://github.com/peekbank/peekbank-website/blob/master/peekbank.json)).
-
-
-# Usage
-
-## Update the Dev Database
-
-1. Right now there is a separate directory called `peekbank_data_testing` for adding a subset of datasets for testing (by copying them manually from `peekbank_data_osf`). The script in the next step looks at a folder called `peekbank_data`, which is either symlinked to the testing directory or to the output OSF directory (when you are ready to process all of the datasets). Change the symlink by deleting it with `rm` and then symlinking it with `ln -s <destination> <symlink name>`, e.g., `ln -s peekbank_data_osf peekbank_data` so that it runs all datasets OR `ln -s peekbank_data_testing peekbank_data` so that it only looks at the test datasets.
-   
-1. `cd scripts` and run `./new_dev_db.sh` This drops the existing database called `peekbank_dev` (if it exists), and creates a fresh one. Then it invokes Django migrations to enforce the correct schema, and invokes the Django populate command on whatever is in the `peekbank_data` directory. This then runs a special Django management command that adds another table with the run length encoding. If a script whines about permissions, make sure it is executable with `chmod +x [filename]`.
-
-
-When you want to update the database, you don't need to install anything new (i.e. MySQL or python libraries) -- all you need to do isget on the existing machine, load the appropriate virtual environment so that the system can see the right python libraries, download the fresh data, and then push that data to MySQL. In more detail:
-
-
-1. Download the most recent version of all of the files from OSF with the Django command: `python3 manage.py download_osf`, which will put the data into `peekbank-data/peekbank_data_osf` by default. Use `--dataroot <dir>` to specify another directory.
-
-
-1. Run `./scripts/new_dev_db.sh.` This drops the existing database called `peekbank_dev` (if it exists), and creates a fresh one. Then it invokes Django migrations to enforce the correct schema, and invokes the Django populate command on whatever is in the `peekbank_data_osf` directory (default). This then runs a special Django management command that adds another table with the run length encoding. (If you want to create a database with a subset of the datasets, create a new folder with the subset and specify it to the `new_dev_db.sh` script using the `--data_root <dir>` command line argument.)
-
+TODO
 Unless this script errors out, you should be able to see the new data in the `peekbank_dev` database when this process finishes.
 
-## Promote a Dev Database to Production
 
-If the contents of `peekbank_dev` look good when inspected with an SQL client (and, when we have them, pass tests), you can promote the dev database to a named production database with `./dev_to_prod.sh`. Supply the new name to this script  (e.g., `./dev_to_prod.sh 2021.1`) , otherwise it will overwrite the default database `peekbank`. Note that this will overwrite an existing database of the same name, so be careful.
+#### Dry Run (Validation only)
 
-## Schema Specification
+TODO
 
-The `peekbank` application uses a JSON-specified representation of the schema, in `static/`. This same schema is used in three places:
+## Promoting the Staging Database to Production
 
-1) by the `peekds` file readers, in order to parse and validate input files
-2) by `models.py` in Django to establish the data model (i.e., Django object relational model) and to define migrations
-3) by `populate_peekbank2.py` to populate the fields from CSVs output by peekds 
+TODO
+If the contents of `peekbank_dev` look good when inspected with an SQL client (and, when we have them, pass tests), you can promote the dev database to a named production database with `./dev_to_prod.sh`. Supply the new name to this script  (e.g., `./dev_to_prod.sh 2021.1`) Note that this will overwrite an existing database of the same name, so be careful.
 
-## Validation Mode
+## Accessing the Peekbank Database
 
-The ingestion pipeline can also be used to check that data meets the requirements specified in the schema (without writing anything to the database) using the `--valdiate_only` flag. This is useful for checking the compliance of all datasets:
+TODO
 
-`python3 -m pdb -c c manage.py populate_db --data_root /home/ubuntu/peekbank_data --validate_only`
+## Where is the Data on my Machine?
 
-## Specifying a single dataset
+TODO
 
-The ingestion pipeline can be run on a single datset using the `--dataset` flag:
 
-`python3 -m pdb -c c manage.py populate_db --data_root /home/ubuntu/peekbank_data --dataset swingley_aslin_2002`
 
+TODO: How to access the db (where to put)
