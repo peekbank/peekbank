@@ -3,10 +3,12 @@ db-data
 peekbank-env
 .env.template
 .env.prod
-enter-peekbank.sh
 Dockerfile
 .dockerignore
-docker-compose-yml
-run-loval-db.sh
+docker-compose.yml
+run-local-db.sh
 .gitignore
 temp
+pb
+pb_aliases.conf
+README.md

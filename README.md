@@ -52,6 +52,86 @@ docker compose build
 docker compose up -d
 ```
 
+
+
+# Usage
+
+
+
+## Importing Data from an existing Peekbank
+TODO
+### Remote
+TODO
+### Using SQL dumps
+
+
+### Pulling Data from OSF
+
+TODO
+
+```
+./pb download
+```
+
+* `--datasets`, `-ds`: asdfsadfasdf
+* `--keep`, `-k`: asdfsadfasdf
+* `--data_root`, `-dr`: asdfsadfasdf
+* `--non_interactive`, `-ni`: asdfsadfasdf
+
+## Getting Data into the Staging Database
+
+```
+./pb populate
+```
+
+* `--datasets`, `-ds`: asdfsadfasdf
+* `--keep`, `-k`: asdfsadfasdf
+* `--data_root`, `-dr`: asdfsadfasdf
+* `--validate_only`, `-val`: asdfsadfasdf
+
+
+You should be able to see the new data in the `peekbank_dev` database when this process finishes.
+
+
+```
+./pb latest
+```
+
+
+## Promoting the Staging Database to Production
+
+```
+./pb promote [new_version_name]
+```
+
+TODO
+If the contents of `peekbank_dev` look good when inspected with an SQL client (and, when we have them, pass tests), you can promote the dev database to a named production database with `./dev_to_prod.sh`. Supply the new name to this script  (e.g., `./dev_to_prod.sh 2021.1`) Note that this will overwrite an existing database of the same name, so be careful.
+
+## Accessing the Peekbank Database
+
+TODO
+
+## Where is the Data on my Machine?
+
+TODO
+
+
+
+TODO: How to access the db (where to put)
+
+## About the ./pb prefix
+
+The 
+
+```
+./pb
+```
+
+You can exit the container by running
+```
+exit
+```
+
 # Development
 
 You can use the Docker commands from the [deployment section](#deployment) to build and run the Peekbank container locally when testing smaller changes. This is a bit slower (as you need to exit, rebuild, and enter the container after every change) but saves you from having to install anything locally except for Docker.
@@ -89,25 +169,8 @@ pip3 install -r requirements.txt
 
 You might also need to install various database utilities as some of the Python packages depend on them. If you need to install any of these system dependencies, this step should provide you with suitable error messages that point you towards the missing packages.
 
+### Usage in development
 
-# Usage
-
-## Entering Peekbank
-
-Before you can use Peekbank commands to populate and update the database, you will need to "enter" the Peekbank's environment. The method differs based on your setup:
-
-### Deployment (DB in Docker, Django App in Docker)
-
-```
-enter-peekbank.sh
-```
-
-You can exit the container by running
-```
-exit
-```
-
-### Development (DB in Docker, Django App in Python Enviroment)
 
 ```
 source peekbank-env/bin/activate
@@ -117,39 +180,3 @@ You can exit the virtual env by running
 ```
 deactivate
 ```
-
-## Importing Data from an existing Peekbank
-TODO
-### Remote
-TODO
-### Using SQL dumps
-TODO
-## Getting Data into the Staging Database
-TODO
-
-### Pulling Data from OSF
-
-TODO
-Unless this script errors out, you should be able to see the new data in the `peekbank_dev` database when this process finishes.
-
-
-#### Dry Run (Validation only)
-
-TODO
-
-## Promoting the Staging Database to Production
-
-TODO
-If the contents of `peekbank_dev` look good when inspected with an SQL client (and, when we have them, pass tests), you can promote the dev database to a named production database with `./dev_to_prod.sh`. Supply the new name to this script  (e.g., `./dev_to_prod.sh 2021.1`) Note that this will overwrite an existing database of the same name, so be careful.
-
-## Accessing the Peekbank Database
-
-TODO
-
-## Where is the Data on my Machine?
-
-TODO
-
-
-
-TODO: How to access the db (where to put)
