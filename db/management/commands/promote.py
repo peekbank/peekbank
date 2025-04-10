@@ -12,7 +12,6 @@ class Command(BaseCommand):
         parser.add_argument(
             "new_version_name",
             help="Name for the new database version",
-            required=True
         )
 
     def handle(self, *args, **options):
