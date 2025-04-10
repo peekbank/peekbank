@@ -14,6 +14,7 @@ peekbank-data/
 .env.prod
 db-data/
 peekbank-data/
+temp
 
 
 # Vim

@@ -1,10 +1,13 @@
-FROM python:3.9-slim-bullseye
+FROM python:3.12-slim-bullseye
 
-RUN apt update && apt-get install build-essential default-libmysqlclient-dev default-mysql-client pkg-config mariadb-client -y 
+RUN apt update && apt-get install build-essential default-libmysqlclient-dev default-mysql-client pkg-config mariadb-client -y
+
 WORKDIR /srv/peekbank
-COPY . .
-RUN mkdir -p /srv/peekbank/peekbank-data
+
+COPY requirements.txt .
+
 RUN pip3 install -r requirements.txt
 
+COPY . .
 
-
+RUN mkdir -p /srv/peekbank/peekbank-data

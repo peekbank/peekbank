@@ -39,7 +39,7 @@ PEEKBANK_DB_USER = os.environ['PEEKBANK_DB_USER']
 PEEKBANK_DB_PASSWORD = os.environ['PEEKBANK_DB_PASSWORD']
 PEEKBANK_DB_PORT = os.environ['PEEKBANK_DB_PORT']
 SECRET_KEY = os.environ['SECRET_KEY']
-DEBUG = os.environ['DEBUG'] == "TRUE"
+DEBUG = os.environ['DEV'] == "TRUE"
 
 
 ALLOWED_HOSTS = []

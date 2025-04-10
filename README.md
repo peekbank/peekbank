@@ -45,21 +45,21 @@ If you ever need to stop the database, run:
 docker compose down
 ```
 
-When updating peekbank, run the following commands in the projects root:
+When updating peekbank, pull the latest version from the repository using `git pull` and run the following commands in the projects root:
 
 ```
-git pull
 docker compose build
 docker compose up -d
 ```
 
 # Development
 
-You can use the docker commands from the [deployment section](#deployment) to build and run the peekbank container locally when testing simple changes.
+You can use the Docker commands from the [deployment section](#deployment) to build and run the Peekbank container locally when testing smaller changes. This is a bit slower (as you need to exit, rebuild, and enter the container after every change) but saves you from having to install anything locally except for Docker.
 
-For a faster development experience, it makes sense to use docker for the database and use a local python environment to run the Django app. For this, you will need an installation of [Python 3.12](https://www.python.org/downloads/release/python-3120/).
+For a faster development experience, it makes sense to use Docker for the database and use a local Python environment to run the Django app. For this, you will need an installation of [Python 3.12](https://www.python.org/downloads/release/python-3120/).
 
-Start the local develeopment database via docker by running
+
+Start the local develeopment database via Docker by running
 ```
 ./run-local-db.sh
 ```
@@ -86,6 +86,8 @@ Next, install the required packages:
 ```
 pip3 install -r requirements.txt
 ```
+
+You might also need to install various database utilities as some of the Python packages depend on them. If you need to install any of these system dependencies, this step should provide you with suitable error messages that point you towards the missing packages.
 
 
 # Usage
