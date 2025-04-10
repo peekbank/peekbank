@@ -79,10 +79,8 @@ class Command(BaseCommand):
             if item["attributes"]["name"] == "processed_data":
                 print("processed_data subfolder found!")
                 return item
-            
-        print(
-            f"no processed_data subfolder exists for {folder['attributes']['name']}"
-        )
+
+        print(f"no processed_data subfolder exists for {folder['attributes']['name']}")
 
     def download_processed_data(self, folder, data_root, progress_data):
         folder_path = folder["attributes"]["materialized_path"]
@@ -208,6 +206,7 @@ class Command(BaseCommand):
 
         if not continue_previous:
             progress_data = self.create_empty_progress()
+            self.save_progress(data_root, progress_data)
 
             if keep_existing:
                 print("Keeping existing datasets, only redownloading specified ones")
@@ -218,7 +217,7 @@ class Command(BaseCommand):
                     items = os.listdir(data_root)
                     for item in items:
                         if item == PROGRESS_FILE:
-                            continue  # Don't delete progress file yet
+                            continue  # Don't delete progress file, as we just created it
                         item_path = os.path.join(data_root, item)
                         try:
                             if os.path.isdir(item_path):
@@ -241,20 +240,37 @@ class Command(BaseCommand):
 
         processed_list = []
         unprocessed_list = []
+        skipped_list = []
+        folder_map = {folder["attributes"]["name"]: folder for folder in folders}
 
         if continue_previous and progress_data["completed"]:
+            # Instead of filtering out completed datasets, mark them as skipped
+            for completed_dataset in progress_data["completed"]:
+                if completed_dataset in folder_map:
+                    skipped_list.append(folder_map[completed_dataset])
+
             print(
-                f"Skipping already downloaded datasets: {', '.join(progress_data['completed'])}"
+                f"Previously downloaded datasets that will be skipped: {', '.join(progress_data['completed'])}"
             )
-            folders = [
+
+            # Filter out datasets that were already completed
+            folders_to_process = [
                 folder
                 for folder in folders
                 if folder["attributes"]["name"] not in progress_data["completed"]
             ]
+        else:
+            folders_to_process = folders
+
+        total_folders = len(folders_to_process) + len(skipped_list)
 
         with tqdm(
-            total=len(folders), desc="Processing folders", unit="folder"
+            total=total_folders, desc="Processing folders", unit="folder"
         ) as folder_pbar:
+            for skipped_folder in skipped_list:
+                folder_name = skipped_folder["attributes"]["name"]
+                folder_pbar.update(1)
+
             for folder in folders:
                 folder_name = folder["attributes"]["name"]
 
@@ -281,6 +297,12 @@ class Command(BaseCommand):
 
                 tqdm.write("\n")
                 folder_pbar.update(1)
+
+        if len(skipped_list) > 0:
+            print("\nSkipped these already downloaded folders:")
+            pprint(
+                [skipped["attributes"]["materialized_path"] for skipped in skipped_list]
+            )
 
         print("\nDownloaded these processed folders:")
         pprint(
