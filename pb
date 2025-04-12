@@ -6,7 +6,7 @@ source .env
 ALIASES_FILE="./pb_aliases.conf"
 
 # Check if the database is running
-if [ -z `docker ps -q --no-trunc | grep $(docker-compose ps -q peekbank-db)` ]; then
+if [ -z `docker ps -q --no-trunc | grep $(docker compose ps -q peekbank-db)` ]; then
   echo "The local database is not running, start it using ./run-local-db.sh"
   exit 1
 fi
@@ -14,7 +14,7 @@ fi
 # If DEV is set to TRUE (case insensitive), rebuild the container first
 if [[ $DEV = "TRUE" ]]; then
   echo "DEV mode is enabled. Rebuilding container before executing command..."
-  docker-compose build peekbank-django
+  docker compose build peekbank-django
 fi
 
 # If we have at least one argument
@@ -43,8 +43,8 @@ if [ $# -gt 0 ]; then
   fi
   
   # Run the command in the container
-  docker-compose run --rm peekbank-django $FULL_CMD
+  docker compose run --rm peekbank-django $FULL_CMD
 else
   # No arguments, just run bash in the container
-  docker-compose run --rm --entrypoint bash peekbank-django
+  docker compose run --rm --entrypoint bash peekbank-django
 fi
