@@ -14,7 +14,7 @@ services:
       - ./db-data:/var/lib/mysql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${PEEKBANK_DB_ROOTPW}"]
       timeout: 20s
       retries: 10
   

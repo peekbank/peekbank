@@ -17,7 +17,7 @@ Password: gazeofracoons
 
 For a more streamlined development and deployment experience, we use [Docker](https://docs.docker.com/engine/install/). Install the latest version for your operating system (Docker Desktop for local running/development and regular Docker for server deployments).
 
-After cloning the repo, create an `.env` file with the following command:
+After cloning the repo, create a `.env` file with the following command:
 
 ```
 cp .env.template .env
@@ -30,7 +30,7 @@ When working with the database, it might be useful to have a tool to view the co
 # Deployment
 
 
-To start up peekbank, run this command in the projects repository 
+To start up Peekbank, run this command in the project's root directory: 
 
 ```
 docker compose up -d
@@ -45,7 +45,7 @@ If you ever need to stop the database, run:
 docker compose down
 ```
 
-When updating peekbank, pull the latest version from the repository using `git pull` and run the following commands in the projects root:
+When updating Peekbank, pull the latest version from the repository using `git pull` and run the following commands in the project's root:
 
 ```
 docker compose build
@@ -56,94 +56,169 @@ docker compose up -d
 
 # Usage
 
+## Importing Data from an existing Peekbank Instance
 
+This section applies to you if you are migrating your Peekbank setup to a new server or want to mirror the hosted Peekbank to your local installation. If you want to pull in the imported data from the OSF, skip to the next section.
+Peekbank offers two ways of getting existing data in: 
 
-## Importing Data from an existing Peekbank
-TODO
-### Remote
-TODO
-### Using SQL dumps
+### Option 1: Remote
 
+To import the data of another running Peekbank instance, run the following command in the project's root (if the data source is not our hosted Peekbank instance, replace the IP and port with your data source):
 
-### Pulling Data from OSF
+```
+./pb mirror 34.210.173.143:3306
+```
 
-TODO
+This command offers these optional arguments:
+* `--databases`, `-dbs`: Specify one or more database versions to mirror (default: all accessible databases)
+* `--non_interactive`, `-ni`: Skip confirmation prompts and automatically proceed
+
+After the import finishes, your instance will contain all of the database versions of the remote source.
+
+### Option 2: Using SQL dumps
+
+If both instances are not running at the same time, you can dump the contents of the source instance into `.sql` files and ingest them with the target instance.
+
+In the root of the source instance's directory, run this command:
+
+```
+./pb export 
+```
+
+These optional arguments can be specified:
+* `--databases`, `-dbs`: Specify one or more databases to export (default: all accessible databases)
+* `--output_dir`, `-o`: Directory to store dump files (default: "./peekbank-data/dumps")
+* `--non_interactive`, `-ni`: Skip confirmation prompts and automatically proceed
+
+Next, move the `.sql` files to the location of your target instance (either into "./peekbank-data/dumps" or another subfolder of "./peekbank-data/" that you specify) and run this command:
+```
+./pb import
+```
+
+These optional arguments can be specified:
+* `--databases`, `-dbs`: Specify one or more databases to import (default: all available dump files)
+* `--input_dir`, `-i`: Directory containing dump files (default: "./peekbank-data/dumps", needs to be a subdirectory of ./peekbank-data)
+* `--non_interactive`, `-ni`: Skip confirmation prompts and automatically proceed
+
+After the import finishes, your instance will contain all of the database versions of the source instance.
+
+## Creating new Database Versions from the OSF Data
+
+When creating a new database version (e.g. 2025.1) in Peekbank, the processed data on OSF flows through these stages:
+
+`OSF` -1-> `Download Folder` -2-> `Staging Database` -3-> `Named Database Version`
+
+### 1. Pulling Data from OSF
+
+To get the latest datasets from OSF onto your machine/server for ingestion, run the following command:
 
 ```
 ./pb download
 ```
 
-* `--datasets`, `-ds`: asdfsadfasdf
-* `--keep`, `-k`: asdfsadfasdf
-* `--data_root`, `-dr`: asdfsadfasdf
-* `--non_interactive`, `-ni`: asdfsadfasdf
+This command will, by default, wipe the download folder and download all datasets available on OSF. To customize any of this behavior, you can use these arguments:
 
-## Getting Data into the Staging Database
+* `--datasets`, `-ds`: Specify one or more dataset names to download from OSF. Only datasets matching these names will be downloaded.
+* `--keep`, `-k`: Keep existing downloaded datasets and only download the specified ones. Without this flag, all existing data in the target directory will be removed before downloading.
+* `--data_root`, `-dr`: Root directory to download files into. If not specified, the folder will default to `./peekbank-data/peekbank_data_osf`.
+* `--non_interactive`, `-ni`: Run in non-interactive mode without prompting for resuming previously unfinished downloads. Unfinished downloads will be automatically deleted and restarted.
+
+If a previous download was interrupted, the command will prompt you to optionally continue where it left off.
+
+### 2. Getting Data into the Staging Database
+
+Before pushing the data to a versioned database, we first put it to a staging database called `peekbank_dev` for testing and sanity checks.
+Run this command to achieve this:
 
 ```
 ./pb populate
 ```
 
-* `--datasets`, `-ds`: asdfsadfasdf
-* `--keep`, `-k`: asdfsadfasdf
-* `--data_root`, `-dr`: asdfsadfasdf
-* `--validate_only`, `-val`: asdfsadfasdf
-
+You can use these available arguments:
+* `--datasets`, `-ds`: Specify one or more dataset names to import into the database. Only datasets matching these names will be processed.
+* `--keep`, `-k`: Keep existing database data and only overwrite the specified datasets. Without this flag, the database will be recreated from scratch.
+* `--data_root`, `-dr`: Root directory where data files are located. If not specified, the folder will default to `./peekbank-data/peekbank_data_osf`.
+* `--validate_only`, `-val`: Only validate the data without inserting it into the database. This generates the same completion report but doesn't modify the database.
 
 You should be able to see the new data in the `peekbank_dev` database when this process finishes.
+The command will also generate a completion report that shows the import status for each table type (subjects, administrations, trials, etc.) of each dataset.
 
+Optionally, you can run both the download and population with default settings using:
 
 ```
 ./pb latest
 ```
 
 
-## Promoting the Staging Database to Production
+### 3. Promoting the Staging Database to Production
+
+If the contents of `peekbank_dev` look good when inspected with an DBeaver, you can promote the dev database to a named production database using the following command.
 
 ```
 ./pb promote [new_version_name]
 ```
 
-TODO
-If the contents of `peekbank_dev` look good when inspected with an SQL client (and, when we have them, pass tests), you can promote the dev database to a named production database with `./dev_to_prod.sh`. Supply the new name to this script  (e.g., `./dev_to_prod.sh 2021.1`) Note that this will overwrite an existing database of the same name, so be careful.
+Note that this will overwrite an existing database of the same name, so be careful.
+
 
 ## Accessing the Peekbank Database
 
-TODO
+### DBeaver
+
+You can check the database contents using DBeaver with these connection details:
+
+```
+Adapter: MariaDB
+Server Host: 34.210.173.143 (our server, if you have your own setup, use your IP, or use localhost during development)
+Port: 3306 (or whatever you specified in .env)
+Database: peekbank_env (or any of the supported versions)
+Username: reader
+Password: gazeofracoons
+```
+
+### PeekbankR
+
+TODO: Document this once we have a custom way to access other servers using [peekbankr](https://github.com/peekbank/peekbankr) 
 
 ## Where is the Data on my Machine?
 
-TODO
+The automatically generated folder `./peekbank-data/` is mounted into the container, and all data generated by Peekbank lives there (MariaDB files, downloaded OSF files, SQL dumps etc.).
 
-
-
-TODO: How to access the db (where to put)
 
 ## About the ./pb prefix
 
-The 
+As the Peekbank Django app runs in a Docker container, we provide a `./pb` prefix to run commands in the container.
 
+For one, it provides the shorthand commands we have seen in the usage suggestion. These map to specific commands in the container, as defined in [pb_aliases.conf](./pb_aliases.conf).
+The prefix also allows you to execute arbitrary commands in the container, e.g.
+
+```
+./pb echo "In the container"
+```
+This helper is handy during development or when debugging a production deployment.
+
+You can even go a step further and enter the container to run commands directly in there, using
 ```
 ./pb
 ```
 
-You can exit the container by running
+You can later exit the container by running
 ```
 exit
 ```
 
 # Development
 
-You can use the Docker commands from the [deployment section](#deployment) to build and run the Peekbank container locally when testing smaller changes. This is a bit slower (as you need to exit, rebuild, and enter the container after every change) but saves you from having to install anything locally except for Docker.
+You can use the Docker commands from the [deployment section](#deployment) to build and run the container locally when testing small and medium sized changes to Peekbank. If the `DEV` variable is set to TRUE in the `.env` file, the `./pb` command prefix will automatically rebuild the container before execution.
 
-For a faster development experience, it makes sense to use Docker for the database and use a local Python environment to run the Django app. For this, you will need an installation of [Python 3.12](https://www.python.org/downloads/release/python-3120/).
+If you want to make deeper changes (add new dependencies etc.), it makes sense to use Docker for the database and use a local Python environment to run the Django app. For this, you will need an installation of [Python 3.12](https://www.python.org/downloads/release/python-3120/).
 
 
-Start the local develeopment database via Docker by running
+Start the local development database via Docker by running
 ```
 ./run-local-db.sh
 ```
-in the projects root. The MariaDB database will now be accessible on the port you specified in `.env` (3306 default).
+in the project's root. The MariaDB database will now be accessible on the port you specified in `.env` (3306 default).
 
 
 Next, set up the virtual environment:
@@ -167,10 +242,9 @@ Next, install the required packages:
 pip3 install -r requirements.txt
 ```
 
-You might also need to install various database utilities as some of the Python packages depend on them. If you need to install any of these system dependencies, this step should provide you with suitable error messages that point you towards the missing packages.
+Depending on your OS, you might also need to install various database utilities, as some of the Python packages depend on them. If you need to install any of these system dependencies, this step should provide you with suitable error messages pointing you toward the missing packages.
 
-### Usage in development
-
+Every time you start up your shell for the first time, you will need to enter the virtual environment again to run Peekbank commands:
 
 ```
 source peekbank-env/bin/activate
@@ -180,3 +254,5 @@ You can exit the virtual env by running
 ```
 deactivate
 ```
+
+Keep in mind that without the docker container, you will not need to use the `./pb` prefix for commands and cannot use the shorthands it provides. Check [pb_aliases.conf](./pb_aliases.conf) to see the commands that map to the shorthands that we defined above. 

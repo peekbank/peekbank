@@ -28,7 +28,7 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS(f"New Version Name: {new_version_name}"))
         
-        temp_dir = os.path.join(settings.BASE_DIR, "temp")
+        temp_dir = os.environ.get("TMP_DATA_PATH")
         os.makedirs(temp_dir, exist_ok=True)
         dump_file = os.path.join(temp_dir, f"{source_db}_dump.sql")
         
