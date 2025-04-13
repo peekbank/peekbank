@@ -25,6 +25,3 @@ services:
       - .env
     volumes:
       - ./${PEEKBANK_DATA_PATH}:/srv/peekbank/${PEEKBANK_DATA_PATH}
-    depends_on:
-      peekbank-db:
-        condition: service_healthy

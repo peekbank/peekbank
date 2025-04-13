@@ -7,7 +7,7 @@ ALIASES_FILE="./pb_aliases.conf"
 
 # Check if the database is running
 if [ -z `docker ps -q --no-trunc | grep $(docker compose ps -q peekbank-db)` ]; then
-  echo "The database is not running"
+  echo "The local database is not running"
   exit 1
 fi
 
