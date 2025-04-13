@@ -75,7 +75,7 @@ class Command(BaseCommand):
                 user=remote_user,
                 passwd=remote_password,
                 charset="utf8mb4",
-                connect_timeout=300,
+                connect_timeout=1200,
                 read_timeout=3600,
                 write_timeout=3600,
             )
@@ -243,7 +243,9 @@ class Command(BaseCommand):
                         f"--host={local_host}",
                         f"--port={local_port}",
                         f"--user={local_user}",
+                        "--net_buffer_length=1M",
                         "--max-allowed-packet=1G",
+                        "--connect-timeout=3600",
                         db_name,
                     ]
 
@@ -257,28 +259,43 @@ class Command(BaseCommand):
                     timeout = max(1800, int(file_size_mb * 2))
                     self.stdout.write(f"  Using timeout of {timeout} seconds for import")
 
-                    with open(dump_file, "rb") as f:
-                        result = subprocess.run(
-                            restore_cmd,
-                            stdin=f,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            env=restore_env,
-                            timeout=timeout,
-                        )   
+                    try:
+                        with open(dump_file, "rb") as f:
+                            result = subprocess.run(
+                                restore_cmd,
+                                stdin=f,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                env=restore_env,
+                                timeout=timeout,
+                            )   
 
-                    if result.returncode != 0:
+                        if result.returncode != 0:
+                            error_message = result.stderr.decode(errors='replace')
+                            # Print full MySQL error output to stdout
+                            self.stdout.write("MySQL Error Output:")
+                            self.stdout.write(error_message)
+                            self.stderr.write(
+                                self.style.ERROR(
+                                    f"  Error restoring {db_name}"
+                                )
+                            )
+                        else:
+                            self.stdout.write(
+                                self.style.SUCCESS(f"  Successfully transferred {db_name}")
+                            )
+
+                    except subprocess.TimeoutExpired:
                         self.stderr.write(
                             self.style.ERROR(
-                                f"  Error restoring {db_name}: {result.stderr.decode()}"
+                                f"  Error: Import timed out after {timeout} seconds."
                             )
                         )
-                    else:
-                        self.stdout.write(
-                            self.style.SUCCESS(f"  Successfully transferred {db_name}")
-                        )
 
-                    os.remove(dump_file)
+                    try:
+                        os.remove(dump_file)
+                    except Exception:
+                        pass
 
                 except Exception as e:
                     self.stderr.write(

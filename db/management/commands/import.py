@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 user=local_user,
                 passwd=local_password,
                 charset="utf8mb4",
-                connect_timeout=300,
+                connect_timeout=1200,
                 read_timeout=3600,
                 write_timeout=3600,
             )
@@ -128,7 +128,7 @@ class Command(BaseCommand):
                     f"GRANT SELECT ON `{db_name}`.* TO '{reader_user}'@'%'"
                 )
 
-                self.stdout.write(f"  Processing dump file to fix collation issues...")
+                self.stdout.write("  Processing dump file to fix collation issues...")
                 with open(dump_file, "r", encoding="utf-8") as f:
                     content = f.read()
 
@@ -160,6 +160,7 @@ class Command(BaseCommand):
                     f"--port={local_port}",
                     f"--user={local_user}",
                     "--max_allowed_packet=1G",
+                    "--net_buffer_length=1M",
                     "--connect-timeout=3600",
                     db_name,
                 ]
@@ -175,17 +176,38 @@ class Command(BaseCommand):
                     timeout = max(1800, int(file_size_mb * 2)) 
                     self.stdout.write(f"  Using timeout of {timeout} seconds for import")
                     
-                    with open(temp_file, "rb") as f:
-                        result = subprocess.run(
-                            restore_cmd,
-                            stdin=f,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            env=restore_env,
-                            timeout=timeout,
-                        )
+                    try:
+                        with open(temp_file, "rb") as f:
+                            result = subprocess.run(
+                                restore_cmd,
+                                stdin=f,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                env=restore_env,
+                                timeout=timeout,
+                            )
 
-                    os.remove(temp_file)
+                        if result.returncode != 0:
+                            error_message = result.stderr.decode(errors='replace')
+                            self.stdout.write("MySQL Error Output:")
+                            self.stdout.write(error_message)
+                            self.stderr.write(
+                                self.style.ERROR(
+                                    f"  Error restoring {db_name}"
+                                )
+                            )
+                        else:
+                            self.stdout.write(
+                                self.style.SUCCESS(f"  Successfully imported {db_name}")
+                            )
+
+                    except Exception:
+                        pass
+                    
+                    try:
+                        os.remove(temp_file)
+                    except Exception:
+                        pass
 
                     if result.returncode != 0:
                         self.stderr.write(
