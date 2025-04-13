@@ -9,37 +9,22 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
 import os
-#import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-#with open(os.path.join(BASE_DIR, 'config.json')) as json_config_file:
-#    config = json.load(json_config_file)
-
-#PEEKBANK_DB_HOST = config['peekbank-mysql']['PEEKBANK_DB_HOST']
-#PEEKBANK_DB_NAME = config['peekbank-mysql']['PEEKBANK_DB_NAME']
-#PEEKBANK_DB_USER = config['peekbank-mysql']['PEEKBANK_DB_USER']
-#PEEKBANK_DB_PASSWORD = config['peekbank-mysql']['PEEKBANK_DB_PASSWORD']
-#PEEKBANK_DB_PORT = config['peekbank-mysql']['PEEKBANK_DB_PORT']
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = config['SECRET_KEY']
-
+# Database settings
 PEEKBANK_DB_HOST = os.environ['PEEKBANK_DB_HOST']
 PEEKBANK_DB_NAME = os.environ['PEEKBANK_DB_NAME']
-PEEKBANK_DB_USER = os.environ['PEEKBANK_DB_USER']
-PEEKBANK_DB_PASSWORD = os.environ['PEEKBANK_DB_PASSWORD']
 PEEKBANK_DB_PORT = os.environ['PEEKBANK_DB_PORT']
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = os.environ['DEV'] == "TRUE"
+
+PEEKBANK_DB_USER = os.environ.get('PEEKBANK_DB_ADMIN_USER', 'root')
+PEEKBANK_DB_PASSWORD = os.environ.get('PEEKBANK_DB_ROOTPW', '')
 
 
 ALLOWED_HOSTS = []
@@ -95,10 +80,10 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'HOST': PEEKBANK_DB_HOST,
         'NAME': PEEKBANK_DB_NAME,
-        'USER': PEEKBANK_DB_USER,
+        'USER': PEEKBANK_DB_USER, 
         'PASSWORD': PEEKBANK_DB_PASSWORD,
         'PORT': PEEKBANK_DB_PORT,
-	'CONN_MAX_AGE': 28800
+        'CONN_MAX_AGE': 28800
     }
 }
 

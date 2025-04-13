@@ -3,8 +3,6 @@ services:
     image: mariadb:10.6
     container_name: peekbank-db
     environment:
-    - MARIADB_USER=${PEEKBANK_DB_USER}
-    - MARIADB_PASSWORD=${PEEKBANK_DB_PASSWORD}
     - MARIADB_DATABASE=${PEEKBANK_DB_NAME}
     - MARIADB_ROOT_PASSWORD=${PEEKBANK_DB_ROOTPW}
     command: --lower_case_table_names=1 --port=${PEEKBANK_DB_PORT}

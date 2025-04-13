@@ -19,19 +19,14 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip confirmation prompts and automatically proceed",
         )
-        default_dump_path = os.environ.get("SQL_DUMP_PATH", "./peekbank-data/dumps")
-        parser.add_argument(
-            "--output_dir", "-o",
-            help=f"Directory to store dump files (default: {default_dump_path})",
-            default=default_dump_path,
-        )
+
 
     def handle(self, *args, **options):
         load_dotenv()
 
         specific_databases = options.get("databases")
         non_interactive = options.get("non_interactive", False)
-        output_dir = options.get("output_dir")
+        output_dir = os.environ.get("SQL_DUMP_PATH", "./peekbank-data/dumps")
 
         try:
             os.makedirs(output_dir, exist_ok=True)
