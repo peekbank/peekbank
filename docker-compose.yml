@@ -13,6 +13,8 @@ services:
     volumes:
       - ./db-data:/var/lib/mysql
     restart: unless-stopped
+    networks:
+      - peekbank-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${PEEKBANK_DB_ROOTPW}"]
       timeout: 20s
@@ -25,3 +27,13 @@ services:
       - .env
     volumes:
       - ./${PEEKBANK_DATA_PATH}:/srv/peekbank/${PEEKBANK_DATA_PATH}
+    networks:
+      - peekbank-network
+    depends_on:
+      peekbank-db:
+        condition: service_healthy
+
+
+networks:
+  peekbank-network:
+    driver: bridge

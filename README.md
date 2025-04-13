@@ -15,7 +15,7 @@ Password: gazeofracoons
 
 # General Setup for both Development and Deployment
 
-For a more streamlined development and deployment experience, we use [Docker](https://docs.docker.com/engine/install/). Install the latest version for your operating system (Docker Desktop for local running/development and regular Docker for server deployments).
+For a more streamlined development and deployment experience, we use [Docker](https://docs.docker.com/engine/install/). Install the latest version for your operating system ([Docker Desktop](https://www.docker.com/products/docker-desktop/) for local running/development and regular Docker for server deployments).
 
 After cloning the repo, create a `.env` file with the following command:
 
@@ -27,6 +27,7 @@ and fill it in according to the instructions in the file.
 
 When working with the database, it might be useful to have a tool to view the contents. We reccomend [DBeaver](https://dbeaver.io/download/)
 
+
 # Deployment
 
 
@@ -37,8 +38,9 @@ docker compose up -d
 ```
 
 The first time this command runs, it will take some time as the necessary containers will be built/pulled.
+(If you run into "Permission denied" error messages when running the docker commands, refer to [this stackoverflow post](https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue) to fix those.)
 After the command concludes, the Peekbank container is ready and the database container should be running in the background.
-The database will be accessible on your host machine on the port that was specified in the `.env` (3306 by default, so YOUR_IP_HERE:3306 will expose a MariaDB connection).
+The database will be accessible on your host machine on the port that was specified in the `.env` (3306 by default, so YOUR_IP_HERE:3306 will expose a MariaDB connection). If are running the Peekbank instance on a server, make sure the port is accessible to other machines (e.g. by setting your firewall rules or AWS security policies)
 
 If you ever need to stop the database, run:
 ```
