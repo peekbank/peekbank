@@ -209,16 +209,6 @@ class Command(BaseCommand):
                     except Exception:
                         pass
 
-                    if result.returncode != 0:
-                        self.stderr.write(
-                            self.style.ERROR(
-                                f"  Error restoring {db_name}: {result.stderr.decode()}"
-                            )
-                        )
-                    else:
-                        self.stdout.write(
-                            self.style.SUCCESS(f"  Successfully imported {db_name}")
-                        )
 
                 except Exception as e:
                     self.stderr.write(
