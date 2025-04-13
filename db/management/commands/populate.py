@@ -170,34 +170,46 @@ def validate_aux_data(aux_json):
 
 def create_data_tables(processed_data_folders, schema, validate_only, keep):
     completion_reports = []
+    missing_csv_files = [] 
 
     for data_folder in tqdm(processed_data_folders, desc="Processing datasets", unit="dataset"):
         completion_report = {}
-        # check if we need to process it
-        dataset_df = pd.read_csv(os.path.join(data_folder, "datasets.csv"))
-        if "dataset_name" not in dataset_df.columns:
-            # bail! We cannot do anything without this
-            completion_report = {"dataset_name": "No dataset name: " + data_folder}
-            completion_report["aoi_region_sets"] = "Cannot evaluate"
-            completion_report["subjects"] = "Cannot evaluate"
-            completion_report["datasets"] = "Cannot evaluate"
-            completion_report["administrations"] = "Cannot evaluate"
-            completion_report["stimuli"] = "Cannot evaluate"
-            completion_report["trial_types"] = "Cannot evaluate"
-            completion_report["trials"] = "Cannot evaluate"
-            completion_report["aoi_timepoints"] = "Cannot evaluate"
-            completion_report["xy_timepoints"] = "Cannot evaluate"
+        dataset_name = "Unknown"
+        
+        try:
+            dataset_df = pd.read_csv(os.path.join(data_folder, "datasets.csv"))
+            if "dataset_name" not in dataset_df.columns:
+                print(f"ERROR: Missing dataset_name column in datasets.csv for {data_folder}")
+                completion_report = {"dataset_name": "No dataset name: " + data_folder}
+                completion_report["aoi_region_sets"] = "Cannot evaluate"
+                completion_report["subjects"] = "Cannot evaluate"
+                completion_report["datasets"] = "Cannot evaluate"
+                completion_report["administrations"] = "Cannot evaluate"
+                completion_report["stimuli"] = "Cannot evaluate"
+                completion_report["trial_types"] = "Cannot evaluate"
+                completion_report["trials"] = "Cannot evaluate"
+                completion_report["aoi_timepoints"] = "Cannot evaluate"
+                completion_report["xy_timepoints"] = "Cannot evaluate"
 
+                completion_reports.append(completion_report)
+                continue
+            else:
+                dataset_name = dataset_df.iloc[0].dataset_name
+                completion_report["dataset_name"] = dataset_name
+        except Exception as e:
+            print(f"ERROR: Failed to read datasets.csv for {data_folder}: {str(e)}")
+            missing_csv_files.append({
+                "dataset": os.path.basename(os.path.dirname(data_folder)),
+                "table": "datasets",
+                "optional": False,
+                "error": str(e)
+            })
+            completion_report = {"dataset_name": "Error reading datasets.csv: " + data_folder}
+            completion_report["error"] = str(e)
             completion_reports.append(completion_report)
             continue
 
-        else:
-            dataset_name = dataset_df.iloc[0].dataset_name
-            completion_report["dataset_name"] = dataset_name
-
         print(f"\n\nDataset: {dataset_name}")
-        # pre-compute the offsets for all tables so that the indexing can be consistent
-        # offsets: pk for each table -> offset value, dataset_id -> 59
         table_names = dict([(x["model_class"], x["table"]) for x in schema])
         offsets = {}
         for class_name in table_names.keys():
@@ -211,239 +223,143 @@ def create_data_tables(processed_data_folders, schema, validate_only, keep):
 
         bulk_args = []
 
-        # >>> TODO: put the code below in an iterator that whines about what went wrong and continues to run the other import tasks (both within dataset and across datasets)
-        try:
-            aoi_region_sets = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "aoi_region_sets",
-                offsets,
-                optional=True,
-            )
-            completion_report["aoi_region_sets"] = "passed"
-            if aoi_region_sets is not None:
-                completion_report["num_records_aoi_region_sets"] = len(aoi_region_sets)
-            else:
-                completion_report["num_records_aoi_region_sets"] = 0
+        table_dependencies = {
+            "aoi_region_sets": {"dependencies": [], "optional": True, "status": []},
+            "datasets": {"dependencies": [], "optional": False, "status": []},
+            "subjects": {"dependencies": ["datasets"], "optional": False, "status": []},
+            "administrations": {"dependencies": ["subjects", "datasets"], "optional": False, "status": []},
+            "stimuli": {"dependencies": ["datasets"], "optional": False, "status": []},
+            "trial_types": {"dependencies": ["datasets", "aoi_region_sets", "stimuli"], "optional": False, "status": []},
+            "trials": {"dependencies": ["datasets", "aoi_region_sets", "stimuli", "trial_types"], "optional": False, "status": []},
+            "aoi_timepoints": {"dependencies": ["subjects", "trials", "administrations"], "optional": False, "status": []},
+            "xy_timepoints": {"dependencies": ["subjects", "trials", "administrations"], "optional": True, "status": []}
+        }
+        
+        for table_name, config in table_dependencies.items():
+            try:
+                current_dependencies = {}
+                if config["dependencies"]:
+                    for dep_name in config["dependencies"]:
+                        if dep_name in table_dependencies and table_dependencies[dep_name]["status"]:
+                            current_dependencies[dep_name] = table_dependencies[dep_name]["status"]
+                        else:
+                            if not config["optional"]:
+                                raise ValueError(f"Required dependency {dep_name} not available for {table_name}")
+                
+                result = CSV_to_Django(
+                    validate_only,
+                    bulk_args,
+                    data_folder,
+                    schema,
+                    table_name,
+                    offsets,
+                    dependencies=current_dependencies if current_dependencies else None,
+                    optional=config["optional"]
+                )
+                
+                table_dependencies[table_name]["status"] = result
+                
+                completion_report[table_name] = "passed"
+                if result is not None:
+                    completion_report[f"num_records_{table_name}"] = len(result)
+                    
+                    if table_name == "subjects" and result:
+                        completion_report["num_subjects_with_cdis"] = sum(
+                            1 for x in result.values() 
+                            if x.subject_aux_data is not None and "cdi_responses" in x.subject_aux_data
+                        )
+                    elif table_name == "administrations" and result:
+                        completion_report["num_admins_with_cdis"] = sum(
+                            1 for x in result.values() 
+                            if x.administration_aux_data is not None and 
+                            "cdi_responses" in x.administration_aux_data
+                        )
+                else:
+                    completion_report[f"num_records_{table_name}"] = 0
+                    
+                    if config["optional"]:
+                        print(f"Optional table {table_name} not found for dataset {dataset_name}, continuing...")
+                    
+            except ValueError as ve:
+                error_trace = str(ve)
+                print(f"ERROR processing {table_name} for dataset {dataset_name}:")
+                print(error_trace)
+                
+    
+                if "is missing; aborting" in error_trace:
+                    if not config["optional"]:
+                        missing_csv_files.append({
+                            "dataset": dataset_name,
+                            "table": table_name,
+                            "optional": False,
+                            "error": error_trace
+                        })
+                
+                completion_report[table_name] = error_trace
+                completion_report[f"num_records_{table_name}"] = "Cannot evaluate"
+                
+                table_dependencies[table_name]["status"] = []
+            except Exception:
+                error_trace = traceback.format_exc()
+                print(f"ERROR processing {table_name} for dataset {dataset_name}:")
+                print(error_trace)
+                
+                completion_report[table_name] = error_trace
+                completion_report[f"num_records_{table_name}"] = "Cannot evaluate"
+                
+                table_dependencies[table_name]["status"] = []
 
-        except Exception:
-            completion_report["aoi_region_sets"] = traceback.format_exc()
-            completion_report["num_records_aoi_region_sets"] = "Cannot evaluate"
-
-        try:
-            datasets = CSV_to_Django(
-                validate_only, bulk_args, data_folder, schema, "datasets", offsets
-            )
-            completion_report["datasets"] = "passed"
-
-            if datasets is not None:
-                completion_report["num_records_datasets"] = len(datasets)
-            else:
-                completion_report["num_records_datasets"] = 0
-
-        except Exception:
-            completion_report["datasets"] = traceback.format_exc()
-            completion_report["num_records_datasets"] = "Cannot evaluate"
-
-        try:
-            subjects = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "subjects",
-                offsets,
-                dependencies={"datasets": datasets},
-            )
-            completion_report["subjects"] = "passed"
-            if subjects is not None:
-                completion_report["num_records_subjects"] = len(subjects)
-            else:
-                completion_report["num_records_subjects"] = 0
-
-            completion_report["num_subjects_with_cdis"] = len(
-                [
-                    "cdi_responses" in x.subject_aux_data
-                    for x in subjects.values()
-                    if x.subject_aux_data is not None
-                ]
-            )
-
-        except Exception:
-            completion_report["subjects"] = traceback.format_exc()
-            completion_report["num_records_subjects"] = "Cannot evaluate"
-
-        try:
-            administrations = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "administrations",
-                offsets,
-                dependencies={"subjects": subjects, "datasets": datasets},
-            )
-            completion_report["administrations"] = "passed"
-            if administrations is not None:
-                completion_report["num_records_administrations"] = len(administrations)
-            else:
-                completion_report["num_records_administrations"] = 0
-
-            completion_report["num_admins_with_cdis"] = len(
-                [
-                    "cdi_responses" in x.administration_aux_data[0]
-                    for x in administrations.values()
-                    if x.administration_aux_data is not None
-                ]
-            )
-
-        except Exception:
-            completion_report["administrations"] = traceback.format_exc()
-            completion_report["num_records_administrations"] = "Cannot evaluate"
-
-        try:
-            stimuli = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "stimuli",
-                offsets,
-                dependencies={"datasets": datasets},
-            )
-            completion_report["stimuli"] = "passed"
-            if stimuli is not None:
-                completion_report["num_records_stimuli"] = len(stimuli)
-            else:
-                completion_report["num_records_stimuli"] = 0
-                completion_report["num_records_stimuli"] = "Cannot evaluate"
-
-        except Exception:
-            completion_report["stimuli"] = traceback.format_exc()
-
-        try:
-            trial_types = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "trial_types",
-                offsets,
-                dependencies={
-                    "datasets": datasets,
-                    "aoi_region_sets": aoi_region_sets,
-                    "stimuli": stimuli,
-                },
-            )
-            completion_report["trial_types"] = "passed"
-            if trial_types is not None:
-                completion_report["num_records_trial_types"] = len(trial_types)
-            else:
-                completion_report["num_records_trial_types"] = 0
-        except Exception:
-            completion_report["trial_types"] = traceback.format_exc()
-            completion_report["num_records_trial_types"] = "Cannot evaluate"
-
-        try:
-            trials = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "trials",
-                offsets,
-                dependencies={
-                    "datasets": datasets,
-                    "aoi_region_sets": aoi_region_sets,
-                    "stimuli": stimuli,
-                    "trial_types": trial_types,
-                },
-            )
-            completion_report["trials"] = "passed"
-            if trials is not None:
-                completion_report["num_records_trials"] = len(trials)
-            else:
-                completion_report["num_records_trials"] = 0
-
-        except Exception:
-            completion_report["trials"] = traceback.format_exc()
-            completion_report["num_records_trials"] = "Cannot evaluate"
-
-        try:
-            aoi_timepoints = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "aoi_timepoints",
-                offsets,
-                dependencies={
-                    "subjects": subjects,
-                    "trials": trials,
-                    "administrations": administrations,
-                },
-            )
-            completion_report["aoi_timepoints"] = "passed"
-            if aoi_timepoints is not None:
-                completion_report["num_records_aoi_timepoints"] = len(aoi_timepoints)
-            else:
-                completion_report["num_records_aoi_timepoints"] = 0
-
-        except Exception:
-            completion_report["aoi_timepoints"] = traceback.format_exc()
-            completion_report["num_records_aoi_timepoints"] = "Cannot evaluate"
-
-        try:
-            xy_timepoints = CSV_to_Django(
-                validate_only,
-                bulk_args,
-                data_folder,
-                schema,
-                "xy_timepoints",
-                offsets,
-                dependencies={
-                    "subjects": subjects,
-                    "trials": trials,
-                    "administrations": administrations,
-                },
-                optional=True,
-            )
-            completion_report["xy_timepoints"] = "passed"
-            if xy_timepoints is not None:
-                completion_report["num_records_xy_timepoints"] = len(xy_timepoints)
-            else:
-                completion_report["num_records_xy_timepoints"] = 0
-
-        except Exception:
-            completion_report["xy_timepoints"] = traceback.format_exc()
-            completion_report["num_records_xy_timepoints"] = "Cannot evaluate"
-
-        if not validate_only:
-            bulk_create_tables(bulk_args)
-            reset_queries()
-        else:
+        if not validate_only and bulk_args:
+            try:
+                bulk_create_tables(bulk_args)
+                reset_queries()
+                print(f"Successfully imported dataset: {dataset_name}")
+            except Exception as e:
+                error_trace = traceback.format_exc()
+                print(f"ERROR during bulk creation for dataset {dataset_name}:")
+                print(error_trace)
+                completion_report["bulk_create_error"] = error_trace
+        elif validate_only:
             print("Ran in validation mode, nothing written to the database.")
 
         completion_reports.append(completion_report)
 
     print("Generating a completion report...")
-    completion_df = pd.DataFrame(completion_reports)
+    try:
+        completion_df = pd.DataFrame(completion_reports)
 
-    load_dotenv()
-    data_dir = "peekbank-data"
-    if "PEEKBANK_DATA_PATH" in os.environ:
-        data_dir = os.environ["PEEKBANK_DATA_PATH"]
-    completion_dir = os.path.join(data_dir, "completion_reports")
-    if not os.path.exists(completion_dir):
-        os.makedirs(completion_dir)
+        load_dotenv()
+        data_dir = "peekbank-data"
+        if "PEEKBANK_DATA_PATH" in os.environ:
+            data_dir = os.environ["PEEKBANK_DATA_PATH"]
+        completion_dir = os.path.join(data_dir, "completion_reports")
+        if not os.path.exists(completion_dir):
+            os.makedirs(completion_dir)
 
-    now = datetime.now()
-    current_date_time = now.strftime("%Y-%m-%d-_%H_%M_%S")
-    completion_df.to_csv(
-        os.path.join(completion_dir, "completion_report_" + current_date_time + ".csv")
-    )
+        now = datetime.now()
+        current_date_time = now.strftime("%Y-%m-%d-_%H_%M_%S")
+        report_path = os.path.join(completion_dir, "completion_report_" + current_date_time + ".csv")
+        completion_df.to_csv(report_path)
+        print(f"Completion report saved to: {report_path}")
+    except Exception as e:
+        print(f"ERROR generating completion report: {str(e)}")
+    
+   
+    if missing_csv_files:
+        print("\n\n===== MISSING NON-OPTIONAL CSV FILES REPORT =====")
+        print(f"Total missing non-optional files: {len(missing_csv_files)}")
+        print("-" * 60)
+        for missing in missing_csv_files:
+            print(f"{missing['dataset']:<30} | {missing['table']:<20}")
+        print("-" * 60)
+        
+        try:
+            missing_report_path = os.path.join(completion_dir, "missing_files_report_" + current_date_time + ".csv")
+            pd.DataFrame(missing_csv_files).to_csv(missing_report_path)
+        except Exception:
+            pass
+    
+    return completion_reports, missing_csv_files
 
 
 def process_peekbank_dirs(data_root, validate_only, datasets=None, keep=False):
@@ -520,8 +436,36 @@ def process_peekbank_dirs(data_root, validate_only, datasets=None, keep=False):
                 print(f"Error removing dataset {dataset_name}: {str(e)}")
                 continue
 
-    create_data_tables(processed_data_folders, schema, validate_only, keep)
+    completion_reports, missing_files = create_data_tables(processed_data_folders, schema, validate_only, keep)
+    
+    
+    if missing_files:
+        try:
+            load_dotenv()
+            data_dir = "peekbank-data"
+            if "PEEKBANK_DATA_PATH" in os.environ:
+                data_dir = os.environ["PEEKBANK_DATA_PATH"]
+                
+            now = datetime.now()
+            current_date_time = now.strftime("%Y-%m-%d-_%H_%M_%S")
+            missing_summary_path = os.path.join(data_dir, f"missing_non_optional_files_{current_date_time}.txt")
+            
+            with open(missing_summary_path, 'w') as f:
+                f.write("===== MISSING NON-OPTIONAL CSV FILES REPORT =====\n")
+                f.write(f"Total missing non-optional files: {len(missing_files)}\n")
+                f.write("-" * 80 + "\n")
+                f.write(f"{'DATASET':<30} | {'TABLE':<20} | {'ERROR'}\n")
+                f.write("-" * 80 + "\n")
+                for missing in missing_files:
+                    f.write(f"{missing['dataset']:<30} | {missing['table']:<20} | {missing['error'][:50]}...\n")
+                f.write("-" * 80 + "\n")
+            
+            print(f"Summary of missing files saved to: {missing_summary_path}")
+        except Exception as e:
+            print(f"Error saving missing files summary: {str(e)}")
+    
     print("Completed processing!")
+    return missing_files
 
 
 class Command(BaseCommand):
