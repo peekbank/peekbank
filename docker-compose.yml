@@ -7,9 +7,9 @@ services:
     - MARIADB_PASSWORD=${PEEKBANK_DB_PASSWORD}
     - MARIADB_DATABASE=${PEEKBANK_DB_NAME}
     - MARIADB_ROOT_PASSWORD=${PEEKBANK_DB_ROOTPW}
-    command: --lower_case_table_names=1
+    command: --lower_case_table_names=1 --port=${PEEKBANK_DB_PORT}
     ports:
-      - 0.0.0.0:${PEEKBANK_DB_PORT}:3306
+      - 0.0.0.0:${PEEKBANK_DB_PORT}:${PEEKBANK_DB_PORT}
     volumes:
       - ./db-data:/var/lib/mysql
     restart: unless-stopped
