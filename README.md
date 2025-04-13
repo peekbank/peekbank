@@ -11,7 +11,7 @@ Port: 3306
 Adapter: MariaDB
 Database: 2025.1 (or any of the supported versions)
 Username: reader
-Password: gazeofracoons
+Password: gazeofraccoons
 ```
 
 [Supported versions of the PB database](https://peekbank.github.io/peekbank-website/peekbank.json)
@@ -181,7 +181,7 @@ Server Host: 34.210.173.143 (our server, if you have your own setup, use your IP
 Port: 3306 (or whatever you specified in .env)
 Database: peekbank_env (or any of the supported versions)
 Username: reader
-Password: gazeofracoons
+Password: gazeofraccoons
 ```
 
 ### PeekbankR
