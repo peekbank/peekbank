@@ -229,8 +229,8 @@ def create_data_tables(processed_data_folders, schema, validate_only, keep):
             "subjects": {"dependencies": ["datasets"], "optional": False, "status": []},
             "administrations": {"dependencies": ["subjects", "datasets"], "optional": False, "status": []},
             "stimuli": {"dependencies": ["datasets"], "optional": False, "status": []},
-            "trial_types": {"dependencies": ["datasets", "aoi_region_sets", "stimuli"], "optional": False, "status": []},
-            "trials": {"dependencies": ["datasets", "aoi_region_sets", "stimuli", "trial_types"], "optional": False, "status": []},
+            "trial_types": {"dependencies": ["datasets", "stimuli"], "optional": False, "status": []},
+            "trials": {"dependencies": ["datasets", "stimuli", "trial_types"], "optional": False, "status": []},
             "aoi_timepoints": {"dependencies": ["subjects", "trials", "administrations"], "optional": False, "status": []},
             "xy_timepoints": {"dependencies": ["subjects", "trials", "administrations"], "optional": True, "status": []}
         }
