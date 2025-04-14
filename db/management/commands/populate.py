@@ -81,7 +81,7 @@ def CSV_to_Django(validate_only, bulk_args, data_folder, schema, dataset_type, o
                 fk_to_table = table_names[field['options']['to']]
                 fk_field = field['field_name']
 
-                if dependencies[fk_to_table] is None:
+                if dependencies is None or fk_to_table not in dependencies or dependencies[fk_to_table] is None:
                     # special case when a fk_to table does not exist, e.g. aoi_region_sets
                     payload[fk_field] = None
                 else:
@@ -243,8 +243,7 @@ def create_data_tables(processed_data_folders, schema, validate_only, keep):
                         if dep_name in table_dependencies and table_dependencies[dep_name]["status"]:
                             current_dependencies[dep_name] = table_dependencies[dep_name]["status"]
                         else:
-                            if not config["optional"]:
-                                raise ValueError(f"Required dependency {dep_name} not available for {table_name}")
+                            raise ValueError(f"Required dependency {dep_name} not available for {table_name}")
                 
                 result = CSV_to_Django(
                     validate_only,
@@ -311,10 +310,18 @@ def create_data_tables(processed_data_folders, schema, validate_only, keep):
 
         if not validate_only and bulk_args:
             try:
-                bulk_create_tables(bulk_args)
-                reset_queries()
-                print(f"Successfully imported dataset: {dataset_name}")
-            except Exception as e:
+
+                has_errors = any(completion_report.get(table_name) != "passed" 
+                                for table_name in table_dependencies.keys()
+                                if table_name in completion_report)
+        
+                if not has_errors:
+                    bulk_create_tables(bulk_args)
+                    reset_queries()
+                    print(f"Successfully imported dataset: {dataset_name}")
+                else:
+                    print(f"Dataset {dataset_name} has errors. Check the completion report for details.")
+            except Exception:
                 error_trace = traceback.format_exc()
                 print(f"ERROR during bulk creation for dataset {dataset_name}:")
                 print(error_trace)
@@ -324,7 +331,7 @@ def create_data_tables(processed_data_folders, schema, validate_only, keep):
 
         completion_reports.append(completion_report)
 
-    print("Generating a completion report...")
+    print("\nGenerating a completion report...")
     try:
         completion_df = pd.DataFrame(completion_reports)
 
@@ -438,31 +445,35 @@ def process_peekbank_dirs(data_root, validate_only, datasets=None, keep=False):
 
     completion_reports, missing_files = create_data_tables(processed_data_folders, schema, validate_only, keep)
     
-    
-    if missing_files:
-        try:
-            load_dotenv()
-            data_dir = "peekbank-data"
-            if "PEEKBANK_DATA_PATH" in os.environ:
-                data_dir = os.environ["PEEKBANK_DATA_PATH"]
-                
-            now = datetime.now()
-            current_date_time = now.strftime("%Y-%m-%d-_%H_%M_%S")
-            missing_summary_path = os.path.join(data_dir, f"missing_non_optional_files_{current_date_time}.txt")
-            
-            with open(missing_summary_path, 'w') as f:
-                f.write("===== MISSING NON-OPTIONAL CSV FILES REPORT =====\n")
-                f.write(f"Total missing non-optional files: {len(missing_files)}\n")
-                f.write("-" * 80 + "\n")
-                f.write(f"{'DATASET':<30} | {'TABLE':<20} | {'ERROR'}\n")
-                f.write("-" * 80 + "\n")
-                for missing in missing_files:
-                    f.write(f"{missing['dataset']:<30} | {missing['table']:<20} | {missing['error'][:50]}...\n")
-                f.write("-" * 80 + "\n")
-            
-            print(f"Summary of missing files saved to: {missing_summary_path}")
-        except Exception as e:
-            print(f"Error saving missing files summary: {str(e)}")
+    has_errors = False
+    error_summary = []
+
+    for report in completion_reports:
+        dataset_name = report.get("dataset_name", "Unknown")
+        table_errors = []
+        
+        for key, value in report.items():
+            if key in ["aoi_region_sets", "datasets", "subjects", "administrations", 
+                    "stimuli", "trial_types", "trials", "aoi_timepoints", "xy_timepoints"]:
+                if value != "passed" and value != "Cannot evaluate":
+                    table_errors.append(key)
+                    has_errors = True
+        
+        if table_errors:
+            dataset_error = [f"Dataset: {dataset_name}"]
+            for table in table_errors:
+                error_msg = report[table]
+                if len(error_msg) > 100:
+                    error_msg = error_msg[:97] + "..."
+                dataset_error.append(f"  - {table}: {error_msg}")
+            dataset_error.append("-" * 60)
+            error_summary.append("\n".join(dataset_error))
+
+
+    if has_errors:
+        print("\n\n===== TABLES WITH ERRORS SUMMARY =====")
+        print("\n".join(error_summary))
+        print("-" * 60)
     
     print("Completed processing!")
     return missing_files
