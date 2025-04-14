@@ -135,14 +135,14 @@ If a previous download was interrupted, the command will prompt you to optionall
 
 ### 2. Getting Data into the Staging Database
 
-Before pushing the data to a versioned database, we first put it to a staging database called `peekbank_dev` for testing and sanity checks.
+Before pushing the data to a versioned database, we first put it into a staging database called `peekbank_dev` for testing and sanity checks.
 Run this command to achieve this:
 
 ```
 ./pb populate
 ```
 
-You can use these available arguments:
+You can use these arguments:
 * `--datasets`, `-ds`: Specify one or more dataset names to import into the database. Only datasets matching these names will be processed.
 * `--keep`, `-k`: Keep existing database data and only overwrite the specified datasets. Without this flag, the database will be recreated from scratch.
 * `--data_root`, `-dr`: Root directory where data files are located. If not specified, the folder will default to `./peekbank-data/peekbank_data_osf`.
@@ -160,7 +160,7 @@ Optionally, you can run both the download and population with default settings u
 
 ### 3. Promoting the Staging Database to Production
 
-If the contents of `peekbank_dev` look good when inspected with an DBeaver, you can promote the dev database to a named production database using the following command.
+If the contents of `peekbank_dev` look good when inspected with DBeaver, you can promote the dev database to a named production database using the following command.
 
 ```
 ./pb promote [new_version_name]
@@ -186,7 +186,16 @@ Password: gazeofraccoons
 
 ### PeekbankR
 
-TODO: Document this once we have a custom way to access other servers using [peekbankr](https://github.com/peekbank/peekbankr) 
+To connect to your instance using [peekbankr](https://github.com/peekbank/peekbankr), use the following command:
+(Fill in the database name you want to connect to and the details of your instance)
+
+```
+library(peekbankr)
+
+con <- connect_to_peekbank("peekbank_dev", host="34.210.173.143", port=3306)
+```
+
+You can then use this connection to access the data as per the [peekbankr](https://github.com/peekbank/peekbankr) documentation.
 
 ## Where is the Data on my Machine?
 
