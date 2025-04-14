@@ -1,7 +1,10 @@
 import os
+import signal
 import MySQLdb
 import subprocess
 import glob
+import tempfile
+import gc
 from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 
@@ -20,12 +23,20 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip confirmation prompts and automatically proceed",
         )
+        parser.add_argument(
+            "--chunk-size",
+            type=int,
+            default=100 * 1024 * 1024, 
+            help="Process file in chunks of this size (in bytes)",
+        )
 
     def handle(self, *args, **options):
         load_dotenv()
 
         specific_databases = options.get("databases")
         non_interactive = options.get("non_interactive", False)
+        chunk_size = options.get("chunk_size", 100 * 1024 * 1024)
+        
         input_dir = os.environ.get("SQL_DUMP_PATH", "./peekbank-data/dumps")
 
         if not os.path.isdir(input_dir):
@@ -87,20 +98,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING("Operation cancelled."))
                 return
 
-            self.stdout.write("Connecting to local server as root...")
-            local_conn = MySQLdb.connect(
-                host=local_host,
-                port=local_port,
-                user=local_user,
-                passwd=local_password,
-                charset="utf8mb4",
-                connect_timeout=1200,
-                read_timeout=3600,
-                write_timeout=3600,
-            )
-
-            local_cursor = local_conn.cursor()
-
+            # Process each database separately with fresh connections for each
             for db_name, dump_file in available_databases:
                 self.stdout.write(f"\nProcessing database: {db_name}")
 
@@ -112,64 +110,88 @@ class Command(BaseCommand):
                     )
                     continue
 
-                self.stdout.write(
-                    f"  Dropping local database {db_name} if it exists..."
-                )
-                local_cursor.execute(f"DROP DATABASE IF EXISTS `{db_name}`")
+                try:
+                    # Create a fresh DB connection for each database
+                    self.stdout.write("Connecting to local server as root...")
+                    local_conn = MySQLdb.connect(
+                        host=local_host,
+                        port=local_port,
+                        user=local_user,
+                        passwd=local_password,
+                        charset="utf8mb4",
+                        connect_timeout=1200,
+                        read_timeout=3600,
+                        write_timeout=3600,
+                    )
+                    local_cursor = local_conn.cursor()
 
-                self.stdout.write(f"  Creating database {db_name}...")
-                # collate to fix mysql -> mariadb migration
-                local_cursor.execute(
-                    f"CREATE DATABASE `{db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
-                )
+                    self.stdout.write(
+                        f"  Dropping local database {db_name} if it exists..."
+                    )
+                    local_cursor.execute(f"DROP DATABASE IF EXISTS `{db_name}`")
 
-                self.stdout.write("  Granting select privileges to reader user...")
-                local_cursor.execute(
-                    f"GRANT SELECT ON `{db_name}`.* TO '{reader_user}'@'%'"
-                )
-
-                self.stdout.write("  Processing dump file to fix collation issues...")
-                with open(dump_file, "r", encoding="utf-8") as f:
-                    content = f.read()
-
-                replacements = [
-                    ("utf8mb4_0900_ai_ci", "utf8mb4_general_ci"),
-                    ("utf8mb4_0900_as_ci", "utf8mb4_general_ci"),
-                    ("utf8mb4_0900_as_cs", "utf8mb4_general_ci"),
-                    ("utf8mb4_0900_bin", "utf8mb4_bin"),
-                    ("utf8mb4_ja_0900_as_cs", "utf8mb4_general_ci"),
-                    ("utf8mb4_ja_0900_as_cs_ks", "utf8mb4_general_ci"),
-                    ("utf8mb4_unicode_520_ci", "utf8mb4_unicode_ci"),
-                ]
-
-                modified_content = content
-                for old_collation, new_collation in replacements:
-                    modified_content = modified_content.replace(
-                        old_collation, new_collation
+                    self.stdout.write(f"  Creating database {db_name}...")
+                    # collate to fix mysql -> mariadb migration
+                    local_cursor.execute(
+                        f"CREATE DATABASE `{db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
                     )
 
-                temp_file = f"{dump_file}.tmp"
-                with open(temp_file, "w", encoding="utf-8") as f:
-                    f.write(modified_content)
+                    self.stdout.write("  Granting select privileges to reader user...")
+                    local_cursor.execute(
+                        f"GRANT SELECT ON `{db_name}`.* TO '{reader_user}'@'%'"
+                    )
 
-                self.stdout.write(f"  Restoring to local database {db_name}...")
+                    local_conn.commit()
+                    local_cursor.close()
+                    local_conn.close()
 
-                restore_cmd = [
-                    "mysql",
-                    f"--host={local_host}",
-                    f"--port={local_port}",
-                    f"--user={local_user}",
-                    "--max_allowed_packet=1G",
-                    "--net_buffer_length=1M",
-                    "--connect-timeout=3600",
-                    db_name,
-                ]
+                    self.stdout.write("  Processing dump file to fix collation issues...")
+            
+                    with tempfile.NamedTemporaryFile(mode='w+', suffix='.sql', delete=False) as temp_f:
+                        temp_file = temp_f.name
+                        
+                        with open(dump_file, 'r', encoding='utf-8', errors='replace') as src_f:
+                            replacements = [
+                                ("utf8mb4_0900_ai_ci", "utf8mb4_general_ci"),
+                                ("utf8mb4_0900_as_ci", "utf8mb4_general_ci"),
+                                ("utf8mb4_0900_as_cs", "utf8mb4_general_ci"),
+                                ("utf8mb4_0900_bin", "utf8mb4_bin"),
+                                ("utf8mb4_ja_0900_as_cs", "utf8mb4_general_ci"),
+                                ("utf8mb4_ja_0900_as_cs_ks", "utf8mb4_general_ci"),
+                                ("utf8mb4_unicode_520_ci", "utf8mb4_unicode_ci"),
+                            ]
+                            
+                            while True:
+                                chunk = src_f.read(chunk_size)
+                                if not chunk:
+                                    break
+                                
+                                for old_collation, new_collation in replacements:
+                                    chunk = chunk.replace(old_collation, new_collation)
+                                
+                                temp_f.write(chunk)
+                                
+                                del chunk
+                                gc.collect()
+                    
+                    self.stdout.write(f"  Restoring to local database {db_name}...")
 
-                restore_env = os.environ.copy()
-                if local_password:
-                    restore_env["MYSQL_PWD"] = local_password
+                    restore_cmd = [
+                        "mysql",
+                        f"--host={local_host}",
+                        f"--port={local_port}",
+                        f"--user={local_user}",
+                        "--max_allowed_packet=1G",
+                        "--net_buffer_length=1M",
+                        "--default-character-set=utf8mb4",
+                        "--connect-timeout=3600",
+                        db_name,
+                    ]
 
-                try:
+                    restore_env = os.environ.copy()
+                    if local_password:
+                        restore_env["MYSQL_PWD"] = local_password
+
                     file_size_mb = os.path.getsize(temp_file) / (1024 * 1024)
                     self.stdout.write(f"  Import file size: {file_size_mb:.2f} MB")
                 
@@ -178,50 +200,77 @@ class Command(BaseCommand):
                     
                     try:
                         with open(temp_file, "rb") as f:
-                            result = subprocess.run(
+                            process = subprocess.Popen(
                                 restore_cmd,
                                 stdin=f,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 env=restore_env,
-                                timeout=timeout,
+                                start_new_session=True
                             )
-
-                        if result.returncode != 0:
-                            error_message = result.stderr.decode(errors='replace')
-                            self.stdout.write("MySQL Error Output:")
-                            self.stdout.write(error_message)
-                            self.stderr.write(
-                                self.style.ERROR(
-                                    f"  Error restoring {db_name}"
+                            
+                            try:
+                                stdout, stderr = process.communicate(timeout=timeout)
+                                
+                                if process.returncode != 0:
+                                    error_message = stderr.decode(errors='replace')
+                                    self.stdout.write("MySQL Error Output:")
+                                    self.stdout.write(error_message[:1000] + "..." if len(error_message) > 1000 else error_message)
+                                    self.stderr.write(
+                                        self.style.ERROR(f"  Error restoring {db_name}")
+                                    )
+                                else:
+                                    self.stdout.write(
+                                        self.style.SUCCESS(f"  Successfully imported {db_name}")
+                                    )
+                            except subprocess.TimeoutExpired:
+                                try:
+                                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                                except (ProcessLookupError, PermissionError):
+                                    pass
+                                
+                                self.stderr.write(
+                                    self.style.ERROR(f"  Import timed out after {timeout} seconds")
                                 )
+                    except Exception as e:
+                        self.stderr.write(
+                            self.style.ERROR(f"  Error during import subprocess: {str(e)}")
+                        )
+                    finally:
+                        try:
+                            if os.path.exists(temp_file):
+                                os.remove(temp_file)
+                        except Exception as e:
+                            self.stderr.write(
+                                self.style.WARNING(f"  Could not remove temporary file: {str(e)}")
                             )
-                        else:
-                            self.stdout.write(
-                                self.style.SUCCESS(f"  Successfully imported {db_name}")
-                            )
-
-                    except Exception:
-                        pass
-                    
-                    try:
-                        os.remove(temp_file)
-                    except Exception:
-                        pass
-
-
+                        
+        
+                        gc.collect()
+                        
                 except Exception as e:
                     self.stderr.write(
-                        self.style.ERROR(f"  Error during import: {str(e)}")
+                        self.style.ERROR(f"  Database operation error for {db_name}: {str(e)}")
                     )
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
 
-            self.stdout.write("Flushing privileges...")
-            local_cursor.execute("FLUSH PRIVILEGES")
-
-            local_cursor.close()
-            local_conn.close()
+         
+            try:
+                final_conn = MySQLdb.connect(
+                    host=local_host,
+                    port=local_port,
+                    user=local_user,
+                    passwd=local_password,
+                    charset="utf8mb4",
+                )
+                final_cursor = final_conn.cursor()
+                self.stdout.write("Flushing privileges...")
+                final_cursor.execute("FLUSH PRIVILEGES")
+                final_cursor.close()
+                final_conn.close()
+            except Exception as e:
+                self.stderr.write(
+                    self.style.ERROR(f"Error flushing privileges: {str(e)}")
+                )
 
             self.stdout.write(self.style.SUCCESS("\nDatabase import completed!"))
 
