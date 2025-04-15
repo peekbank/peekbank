@@ -151,7 +151,7 @@ You can use these arguments:
 You should be able to see the new data in the `peekbank_dev` database when this process finishes.
 The command will also generate a completion report that shows the import status for each table type (subjects, administrations, trials, etc.) of each dataset.
 
-Optionally, you can run both the download and population with default settings using:
+Optionally, you can run both the download and population using (this supports the parameters that both of the other commands have):
 
 ```
 ./pb latest
