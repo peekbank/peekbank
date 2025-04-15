@@ -28,7 +28,7 @@ cp .env.template .env
 
 and fill it in according to the instructions in the file.
 
-When working with the database, it might be useful to have a tool to view the contents. We reccomend [DBeaver](https://dbeaver.io/download/)
+When working with the database, it might be useful to have a tool to view the contents. We recommend [DBeaver](https://dbeaver.io/download/)
 
 
 # Deployment
