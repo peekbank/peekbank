@@ -539,10 +539,6 @@ class Command(BaseCommand):
         
         if validate_only or keep:
             self.stdout.write(self.style.SUCCESS("Keeping existing database..."))
-        else:
-            self.stdout.write(
-                self.style.SUCCESS("Keeping existing database as requested...")
-            )
            
             sql_script = f"""
     CREATE USER IF NOT EXISTS '{db_user}'@'%' IDENTIFIED BY '{db_password}';
