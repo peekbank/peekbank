@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BASE_OSF_URL = "https://api.osf.io/v2/nodes/pr6wu/files/osfstorage/"
+BASE_OSF_URL = f"https://api.osf.io/v2/nodes/{os.environ.get("OSF_NODE_ID", "pr6wu")}/files/osfstorage/"
 PROGRESS_FILE = "osf_download_progress.json"
 
 

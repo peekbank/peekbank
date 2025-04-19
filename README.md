@@ -274,3 +274,32 @@ deactivate
 ```
 
 Keep in mind that without the docker container, you will not need to use the `./pb` prefix for commands and cannot use the shorthands it provides. Check [pb_aliases.conf](./pb_aliases.conf) to see the commands that map to the shorthands that we defined above. 
+
+# Backups
+
+The Peekbank instance comes with a backup mechanism for two kinds of data:
+
+* The versioned databases in Peekbank (in the form of .sql dumps)
+* The raw and processed data on OSF
+
+These backups can be created automatically by the instance or manually via the command line.
+
+## Automated Backup for Deployment (Backup to AWS S3 Bucket)
+
+To make the deployed Peekbank instance automatically upload backups to an S3 Bucket on AWS, first [set up an AWS S3 Bucket](https://aws.amazon.com/de/s3/). Next, comment out the marked line in the `.env` file and enter the credentials of the S3 Bucket in the fields below. The app will automatically back up the data at the intervall specified in the `.env` file.
+
+## Manually Backing up Data
+
+If you want to manually pull data from your hosted Peekbank instance, you can run
+
+```
+./pb backup --savelocal
+```
+
+which will create a zip with the backup data in the `./peekbank-data/backups`.
+
+You can also use this command to locally download the data from a remote-hosted Peekbank instance (and the OSF repo) by running the following command with your details:
+
+```
+./pb backup --savelocal -c 34.210.173.143:3306
+```

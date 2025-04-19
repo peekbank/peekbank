@@ -23,3 +23,28 @@ services:
       - .env
     volumes:
       - ./${PEEKBANK_DATA_PATH}:/srv/peekbank/${PEEKBANK_DATA_PATH}
+  peekbank-backup:
+    container_name: peekbank-backup
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./${PEEKBANK_DATA_PATH}:/srv/peekbank/${PEEKBANK_DATA_PATH}
+    command: sleep infinity
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.backup.schedule: "${BACKUP_SCHEDULE:-@monthly}"
+      ofelia.job-exec.backup.command: "python manage.py backup"
+      ofelia.job-exec.backup.no-overlap: "true"
+    profiles:
+      - backup
+
+  peekbank-backup-scheduler:
+    image: mcuadros/ofelia:latest
+    container_name: peekbank-backup-scheduler
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    profiles:
+      - backup
