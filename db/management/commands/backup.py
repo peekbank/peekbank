@@ -771,7 +771,7 @@ class Command(BaseCommand):
             "errors": 0,
         }
 
-        def get_all_items(url, max_retries=3, retry_delay=5):
+        def get_all_items(url, max_retries=10, retry_delay=10):
             """Fetch all items from a paginated API endpoint"""
 
             all_items = []
@@ -854,7 +854,7 @@ class Command(BaseCommand):
             return all_items
 
         def download_file(
-            url, dest_path, expected_size=None, max_retries=3, retry_delay=5
+            url, dest_path, expected_size=None, max_retries=10, retry_delay=10
         ):
             """Download a single file with retry logic and progress"""
             folder_path = os.path.dirname(dest_path)
@@ -871,7 +871,7 @@ class Command(BaseCommand):
 
             for attempt in range(1, max_retries + 1):
                 try:
-                    with session.get(url, stream=True, timeout=60) as response:
+                    with session.get(url, stream=True, timeout=3600) as response:
                         response.raise_for_status()
                         # Use Content-Length header, but fallback to expected_size if available
                         total_size = int(response.headers.get("content-length", 0))
@@ -959,7 +959,7 @@ class Command(BaseCommand):
             return False
 
         def download_folder_as_zip(
-            folder_id, folder_name, local_path, max_retries=3, retry_delay=5
+            folder_id, folder_name, local_path, max_retries=10, retry_delay=10
         ):
             """Download a specific OSF folder as a ZIP file"""
             zip_url = f"https://files.osf.io/v1/resources/{osf_node_id}/providers/osfstorage/{folder_id}/?zip="
@@ -985,7 +985,7 @@ class Command(BaseCommand):
             for attempt in range(1, max_retries + 1):
                 try:
                     with session.get(
-                        zip_url, stream=True, timeout=120
+                        zip_url, stream=True, timeout=3600
                     ) as response:  # Longer timeout for zipping
                         response.raise_for_status()
                         total_size = int(response.headers.get("content-length", 0))
