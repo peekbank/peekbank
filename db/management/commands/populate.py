@@ -60,14 +60,14 @@ def CSV_to_Django(validate_only, bulk_args, data_folder, schema, dataset_type, o
 
     # Find the maximum primary key value in the current table to avoid conflicts
     model_class = getattr(db.models, class_names[dataset_type])
-    max_pk_value = 0
+    max_pk_value = -1
     try:
         max_pk_obj = model_class.objects.all().order_by(f'-{primary_key}').first()
         if max_pk_obj:
             max_pk_value = getattr(max_pk_obj, primary_key)
     except Exception as e:
         print(f"Error finding max primary key for {dataset_type}: {str(e)}")
-    
+
     offsets[primary_key] = max_pk_value + 1
 
     for record in df.to_dict('records'):
