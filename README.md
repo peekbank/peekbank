@@ -7,7 +7,7 @@ If you just want to use the Peekbank data for analyses, either use our dedicated
 
 ```
 Hostname: 34.210.173.143
-Port: 3306
+Port: 3307
 Adapter: MariaDB
 Database: 2025.1 (or any of the supported versions)
 Username: reader
@@ -45,7 +45,7 @@ The first time this command runs, it will take some time as the necessary contai
 
 
 After the command concludes, the Peekbank container is ready and the database container should be running in the background.
-The database will be accessible on your host machine on the port that was specified in the `.env` (3306 by default, so YOUR_IP_HERE:3306 will expose a MariaDB connection). If are running the Peekbank instance on a server, make sure the port is accessible to other machines (e.g. by setting your firewall rules or AWS security policies)
+The database will be accessible on your host machine on the port that was specified in the `.env` (3307 by default, so YOUR_IP_HERE:3307 will expose a MariaDB connection). If are running the Peekbank instance on a server, make sure the port is accessible to other machines (e.g. by setting your firewall rules or AWS security policies)
 
 If you ever need to stop the database, run:
 ```
@@ -73,7 +73,7 @@ Peekbank offers two ways of getting existing data in:
 To import the data of another running Peekbank instance, run the following command in the project's root (if the data source is not our hosted Peekbank instance, replace the IP and port with your data source):
 
 ```
-./pb mirror 34.210.173.143:3306
+./pb mirror 34.210.173.143:3307
 ```
 
 This command offers these optional arguments:
@@ -178,7 +178,7 @@ You can check the database contents using DBeaver with these connection details:
 ```
 Adapter: MariaDB
 Server Host: 34.210.173.143 (our server, if you have your own setup, use your IP, or use localhost during development)
-Port: 3306 (or whatever you specified in .env)
+Port: 3307 (or whatever you specified in .env)
 Database: peekbank_env (or any of the supported versions)
 Username: reader
 Password: gazeofraccoons
@@ -192,7 +192,7 @@ To connect to your instance using [peekbankr](https://github.com/peekbank/peekba
 ```
 library(peekbankr)
 
-con <- connect_to_peekbank("peekbank_dev", host="34.210.173.143", port=3306)
+con <- connect_to_peekbank("peekbank_dev", host="34.210.173.143", port=3307)
 ```
 
 You can then use this connection to access the data as per the [peekbankr](https://github.com/peekbank/peekbankr) documentation.
@@ -236,7 +236,7 @@ Start the local development database via Docker by running
 ```
 ./run-local-db.sh
 ```
-in the project's root. The MariaDB database will now be accessible on the port you specified in `.env` (3306 default).
+in the project's root. The MariaDB database will now be accessible on the port you specified in `.env` (3307 default).
 
 
 Next, set up the virtual environment:
@@ -301,5 +301,5 @@ which will create a zip with the backup data in the `./peekbank-data/backups`.
 You can also use this command to locally download the data from a remote-hosted Peekbank instance (and the OSF repo) by running the following command with your details:
 
 ```
-./pb backup --savelocal -c 34.210.173.143:3306
+./pb backup --savelocal -c 34.210.173.143:3307
 ```
