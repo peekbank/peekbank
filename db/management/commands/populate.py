@@ -68,7 +68,7 @@ def CSV_to_Django(validate_only, bulk_args, data_folder, schema, dataset_type, o
     except Exception as e:
         print(f"Error finding max primary key for {dataset_type}: {str(e)}")
     
-    offsets[primary_key] +=  max_pk_value
+    offsets[primary_key] = max_pk_value + 1
 
     for record in df.to_dict('records'):
         record_default = defaultdict(None,record)
