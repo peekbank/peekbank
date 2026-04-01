@@ -591,7 +591,10 @@ class Command(BaseCommand):
             )
 
             if not validate_only:
-                subprocess.check_call(["python", "manage.py", "rle_custom_migration"])
+                rle_cmd = ["python", "manage.py", "rle_custom_migration"]
+                if keep and datasets:
+                    rle_cmd.extend(["--datasets"] + datasets)
+                subprocess.check_call(rle_cmd)
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"Database population failed: {str(e)}"))
             return
