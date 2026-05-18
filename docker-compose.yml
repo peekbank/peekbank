@@ -5,11 +5,17 @@ services:
     environment:
     - MARIADB_DATABASE=${PEEKBANK_DB_NAME}
     - MARIADB_ROOT_PASSWORD=${PEEKBANK_DB_ROOTPW}
-    command: --lower_case_table_names=1 --port=${PEEKBANK_DB_PORT}
+    command: >
+      --lower_case_table_names=1
+      --port=${PEEKBANK_DB_PORT}
+      ${PEEKBANK_TLS_ENABLED:+--ssl-ca=/etc/mysql/certs/ca.pem}
+      ${PEEKBANK_TLS_ENABLED:+--ssl-cert=/etc/mysql/certs/server-cert.pem}
+      ${PEEKBANK_TLS_ENABLED:+--ssl-key=/etc/mysql/certs/server-key.pem}
     ports:
       - 0.0.0.0:${PEEKBANK_DB_PORT}:${PEEKBANK_DB_PORT}
     volumes:
       - ./db-data:/var/lib/mysql
+      - ./db-certs:/etc/mysql/certs:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${PEEKBANK_DB_ROOTPW}"]

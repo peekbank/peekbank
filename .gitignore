@@ -13,6 +13,7 @@ peekbank-data/
 .env
 .env.prod
 db-data/
+db-certs/
 peekbank-data/
 temp
 

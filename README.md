@@ -61,6 +61,33 @@ docker compose up -d
 
 
 
+# TLS Setup (optional)
+
+If your Peekbank instance is reachable from anything other than your own machine (i.e. you are running a public or shared deployment) you should enable TLS on the database so client connections are encrypted and the server's identity can be verified.
+
+Generate a self-signed CA and server certificate by running the helper script from the project root, passing the address clients will use to connect:
+
+```
+./generate-certs.sh 34.210.173.143       # use your ip address or e.g. db.peekbank.yourdomain.org
+```
+
+This creates `./db-certs/{ca,server-cert,server-key}.pem` (10-year validity). If you ever need to regenerate, delete `./db-certs/` first and re-run the script. Keep in mind that any client that already trusts the old CA will need the new `ca.pem`.
+
+Then uncomment the `PEEKBANK_TLS_ENABLED` line in your `.env` and bring the database back up:
+
+```
+docker compose up -d peekbank-db
+```
+
+Verify TLS is live:
+
+```
+docker compose exec peekbank-db mariadb -uroot -p"$PEEKBANK_DB_ROOTPW" -e \
+  "SHOW VARIABLES WHERE Variable_name IN ('have_ssl','ssl_ca','ssl_cert','ssl_key');"
+```
+
+`have_ssl` should be `YES`.
+
 # Usage
 
 ## Importing Data from an existing Peekbank Instance
